@@ -34,7 +34,7 @@
             </span>
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Digital Storage</span>
         </div>
-    </div>
+    </button>
 
     <!-- Search Bar -->
     <div class="flex-1 max-w-2xl mx-12 hidden md:block">
