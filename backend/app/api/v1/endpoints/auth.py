@@ -46,3 +46,9 @@ async def create_user(
         )
     user = await crud_user.create(db, obj_in=user_in)
     return user
+
+@router.get("/me", response_model=user_schema.User)
+async def read_user_me(
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    return current_user
