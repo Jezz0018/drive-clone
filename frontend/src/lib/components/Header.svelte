@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Search as SearchIcon } from 'lucide-svelte';
-    import { token } from '$lib/stores';
+    import { token, user } from '$lib/stores';
     import { goto } from '$app/navigation';
     import { cn } from '$lib/utils';
     import { theme } from '$lib/theme.svelte';
@@ -13,13 +13,18 @@
 
     function logout() {
         token.set(null);
+        user.set(null);
         goto('/login');
     }
 </script>
 
 <header class="h-20 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl sticky top-0 z-40 transition-colors duration-300">
     <!-- Branding -->
-    <div class="flex items-center space-x-3 group cursor-pointer" onclick={() => goto('/')}>
+    <button 
+        class="flex items-center space-x-3 group cursor-pointer bg-transparent border-none p-0 focus:outline-none" 
+        onclick={() => goto('/')}
+        aria-label="Go to Dashboard"
+    >
         <div class="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 group-hover:scale-105 transition-transform duration-300">
             <Cloud class="w-6 h-6 text-white" />
         </div>
@@ -39,7 +44,8 @@
             </div>
             <input 
                 type="text" 
-                placeholder="Search your secure vault..."
+                placeholder="Search your secure drive..." 
+
                 class="block w-full pl-12 pr-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-200 dark:focus:border-indigo-900/50 focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-900/10 transition-all sm:text-sm outline-none text-slate-700 dark:text-slate-200"
                 oninput={(e) => onSearch(e.currentTarget.value)}
             />
@@ -119,11 +125,11 @@
                 )}
             >
                 <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-black shadow-md shadow-indigo-100 dark:shadow-none">
-                    J
+                    {$user?.full_name?.charAt(0) || 'U'}
                 </div>
                 <div class="text-left hidden lg:block leading-tight">
-                    <p class="text-sm font-bold text-slate-800 dark:text-white">Jeswin Jose</p>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Developer</p>
+                    <p class="text-sm font-bold text-slate-800 dark:text-white">{$user?.full_name || 'User'}</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{$user?.is_active ? 'Active Node' : 'Inactive'}</p>
                 </div>
             </button>
 
@@ -134,7 +140,7 @@
                 >
                     <div class="px-4 py-3 mb-2">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Personal Account</p>
-                        <p class="text-sm font-bold text-slate-800 dark:text-white truncate">jeswin.jose@example.com</p>
+                        <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{$user?.email || 'Unknown Email'}</p>
                     </div>
                     <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors">
                         <User class="w-4 h-4" />

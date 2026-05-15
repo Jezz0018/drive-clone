@@ -1,32 +1,40 @@
 import { browser } from '$app/environment';
 
-function createTheme() {
-    let current = $state(
+class ThemeManager {
+    current = $state(
         browser ? (localStorage.getItem('theme') || 'light') : 'light'
     );
 
-    function toggle() {
-        current = current === 'light' ? 'dark' : 'light';
+    constructor() {
         if (browser) {
-            localStorage.setItem('theme', current);
-            updateDocument();
+            this.updateDocument();
         }
     }
 
-    function updateDocument() {
+    toggle() {
+        this.current = this.current === 'light' ? 'dark' : 'light';
+        if (browser) {
+            localStorage.setItem('theme', this.current);
+            this.updateDocument();
+        }
+    }
+
+    init() {
+        if (browser) {
+            this.updateDocument();
+        }
+    }
+
+    updateDocument() {
         if (!browser) return;
-        if (current === 'dark') {
+        if (this.current === 'dark') {
             document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
         } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
         }
     }
-
-    return {
-        get current() { return current; },
-        toggle,
-        init: updateDocument
-    };
 }
 
-export const theme = createTheme();
+export const theme = new ThemeManager();

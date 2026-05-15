@@ -20,10 +20,10 @@
                 password,
                 full_name: fullName
             });
-            toasts.success('Vault initialized. You may now sign in.');
+            toasts.success('Account created. You may now sign in.');
             goto('/login');
         } catch (e: any) {
-            toasts.error(e.response?.data?.detail || 'Initialization failed');
+            toasts.error(e.response?.data?.detail || 'Account creation failed');
         } finally {
             loading = false;
         }
@@ -65,14 +65,14 @@
             <h1 class="text-3xl font-black tracking-tighter text-slate-900 dark:text-white">
                 DRIVE <span class="text-indigo-600">X</span>
             </h1>
-            <p class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-2">New Identity</p>
+            <p class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-2">Create Account</p>
         </div>
 
         <!-- Signup Card -->
         <div class="bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-2xl p-10 rounded-[40px] border border-white dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none">
             <div class="mb-8 text-center lg:text-left">
                 <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Create Account</h2>
-                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Initialize your private digital vault</p>
+                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Set up your secure cloud drive</p>
             </div>
 
             <form class="space-y-5" onsubmit={handleSubmit}>
@@ -126,7 +126,7 @@
                 <div class="flex items-start space-x-3 py-2 ml-1">
                     <input type="checkbox" id="terms" required class="mt-1 rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" />
                     <label for="terms" class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter leading-relaxed">
-                        I agree to the <a href="#" class="text-indigo-600 dark:text-indigo-400 underline">Terms</a> and <a href="#" class="text-indigo-600 dark:text-indigo-400 underline">Privacy Policy</a>
+                        I agree to the <button type="button" class="text-indigo-600 dark:text-indigo-400 underline p-0 bg-transparent border-none cursor-pointer font-bold">Terms</button> and <button type="button" class="text-indigo-600 dark:text-indigo-400 underline p-0 bg-transparent border-none cursor-pointer font-bold">Privacy Policy</button>
                     </label>
                 </div>
 
@@ -138,7 +138,7 @@
                     {#if loading}
                         <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                     {:else}
-                        <span>Initialize Vault</span>
+                        <span>Create Account</span>
                         <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     {/if}
                 </button>
@@ -146,7 +146,7 @@
 
             <div class="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 text-center">
                 <p class="text-sm font-bold text-slate-400 dark:text-slate-500">
-                    Already have a vault? 
+                    Already have an account? 
                     <a href="/login" class="text-indigo-600 dark:text-indigo-400 hover:underline ml-1">Sign In</a>
                 </p>
             </div>

@@ -7,6 +7,7 @@
     import { page } from '$app/stores';
     import { theme } from '$lib/theme.svelte';
     import Toast from '$lib/components/Toast.svelte';
+    import { Cloud } from 'lucide-svelte';
 
     let { children } = $props();
     let loading = $state(true);
@@ -40,10 +41,17 @@
 </svelte:head>
 
 {#if loading}
-    <div class="flex items-center justify-center h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300">
-        <div class="flex flex-col items-center space-y-4">
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
-            <p class="text-slate-500 dark:text-slate-400 font-bold animate-pulse">Initializing Vault...</p>
+    <div class="flex items-center justify-center h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500">
+        <div class="flex flex-col items-center space-y-6">
+            <div class="bg-indigo-600 p-5 rounded-[32px] shadow-2xl shadow-indigo-200 dark:shadow-none animate-pulse">
+                <Cloud class="w-12 h-12 text-white" />
+            </div>
+            <div class="flex flex-col items-center">
+                <h1 class="text-2xl font-black tracking-tighter text-slate-900 dark:text-white">
+                    DRIVE <span class="text-indigo-600">X</span>
+                </h1>
+                <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] mt-2">Initializing Drive</p>
+            </div>
         </div>
     </div>
 {:else}

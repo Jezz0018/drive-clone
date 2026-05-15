@@ -8,6 +8,7 @@ from app.core import security
 from app.core.config import settings
 from app.crud import crud_user
 from app.schemas import user as user_schema
+from app.models.user import User
 
 router = APIRouter()
 

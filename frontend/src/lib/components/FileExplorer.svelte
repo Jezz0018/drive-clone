@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import api from '$lib/api';
+    import api, { BASE_URL } from '$lib/api';
     import { 
         Folder, 
         Star, 
@@ -81,7 +81,7 @@
             const response = await api.get('/items/', { params });
             items = response.data;
         } catch (e) {
-            toasts.error('Failed to sync with vault.');
+            toasts.error('Failed to sync with drive.');
         } finally {
             loading = false;
         }
@@ -134,7 +134,7 @@
     }
 
     function downloadFile(item: Item) {
-        window.open(`http://localhost:8000/api/v1/items/${item.id}/download/`, '_blank');
+        window.open(`${BASE_URL}/items/${item.id}/download/`, '_blank');
         toasts.info(`Downloading ${item.name}...`);
     }
 
@@ -174,7 +174,7 @@
             fileToUpload = null;
             showUploadModal = false;
             fetchItems();
-            toasts.success('Asset secured in vault.');
+            toasts.success('Asset uploaded to drive.');
         } catch (e) {
             toasts.error('Upload failed.');
         }
@@ -211,7 +211,7 @@
         >
             <div class="w-full h-full border-4 border-dashed border-indigo-600 dark:border-indigo-400 rounded-[40px] flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 animate-pulse">
                 <UploadCloud class="w-24 h-24 mb-6" />
-                <h2 class="text-4xl font-black tracking-tighter">Drop to Secure in DRIVE X</h2>
+                <h2 class="text-4xl font-black tracking-tighter">Drop to Upload to DRIVE X</h2>
             </div>
         </div>
     {/if}
@@ -305,7 +305,7 @@
                         <Plus class="w-4 h-4 text-indigo-600" />
                     </div>
                 </div>
-                <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-3">Your Digital Vault is Ready</h3>
+                <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-3">Your Cloud Drive is Ready</h3>
                 <p class="text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">
                     Organize your assets, collaborate with your team, and access your data from anywhere in the universe.
                 </p>
@@ -313,7 +313,7 @@
                     onclick={() => showUploadModal = true}
                     class="mt-10 px-8 py-4 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-black rounded-2xl border-2 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
                 >
-                    Secure Your First Asset
+                    Upload Your First Asset
                 </button>
             </div>
         {:else if viewMode === 'list'}
@@ -465,15 +465,15 @@
                     <Plus class="w-7 h-7 text-white stroke-[3px]" />
                 </div>
                 <div>
-                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-1">Secure New Asset</h2>
-                    <p class="text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-widest">Vault Allocation System</p>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-1">Upload New Asset</h2>
+                    <p class="text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-widest">Storage Management System</p>
                 </div>
             </div>
             
             <div class="space-y-10">
                 <!-- Create Folder Section -->
                 <div>
-                    <label for="folder-name" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Initialize Container</label>
+                    <label for="folder-name" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">New Folder</label>
                     <div class="flex space-x-3">
                         <div class="relative flex-1 group">
                             <FolderPlus class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
@@ -491,7 +491,7 @@
                 
                 <div class="relative">
                     <div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="w-full border-t border-slate-100 dark:border-slate-800"></div></div>
-                    <div class="relative flex justify-center text-xs uppercase font-black text-slate-300 dark:text-slate-700"><span class="px-6 bg-white dark:bg-slate-900 transition-colors">OR ALLOCATE BINARY</span></div>
+                    <div class="relative flex justify-center text-xs uppercase font-black text-slate-300 dark:text-slate-700"><span class="px-6 bg-white dark:bg-slate-900 transition-colors">OR UPLOAD FILE</span></div>
                 </div>
 
                 <!-- Upload Section -->
@@ -518,10 +518,10 @@
                                 <UploadCloud class="w-10 h-10" />
                             </div>
                             <h3 class="text-lg font-black text-slate-900 dark:text-white mb-1 tracking-tight">
-                                {fileToUpload ? fileToUpload.name : 'Stream Data to Vault'}
+                                {fileToUpload ? fileToUpload.name : 'Upload Data to Drive'}
                             </h3>
                             <p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">
-                                {fileToUpload ? `${formatSize(fileToUpload.size)} Binary Object` : 'Drag fragments or click to locate'}
+                                {fileToUpload ? `${formatSize(fileToUpload.size)} File` : 'Drag fragments or click to locate'}
                             </p>
                         </div>
                     </div>
@@ -532,7 +532,7 @@
                             class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-[28px] text-lg font-black shadow-2xl shadow-indigo-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center space-x-3"
                             in:slide
                         >
-                            <span>ENCRYPT & SECURE</span>
+                            <span>UPLOAD ASSET</span>
                             <ArrowLeft class="w-6 h-6 rotate-180" />
                         </button>
                     {/if}

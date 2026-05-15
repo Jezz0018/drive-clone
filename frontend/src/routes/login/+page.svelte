@@ -71,14 +71,14 @@
             <h1 class="text-3xl font-black tracking-tighter text-slate-900 dark:text-white">
                 DRIVE <span class="text-indigo-600">X</span>
             </h1>
-            <p class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-2">Secure Access</p>
+            <p class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-2">Sign In</p>
         </div>
 
         <!-- Login Card -->
         <div class="bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-2xl p-10 rounded-[40px] border border-white dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none">
             <div class="mb-8">
                 <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Welcome Back</h2>
-                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Access your secure digital universe</p>
+                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Access your secure cloud drive</p>
             </div>
 
             <form class="space-y-6" onsubmit={handleSubmit}>
@@ -101,7 +101,7 @@
                     <div class="space-y-2">
                         <div class="flex justify-between items-center ml-1">
                             <label for="password" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
-                            <a href="#" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline">Reset</a>
+                            <button type="button" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline bg-transparent border-none p-0 cursor-pointer">Reset</button>
                         </div>
                         <div class="relative group">
                             <Lock class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
@@ -125,7 +125,7 @@
                     {#if loading}
                         <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                     {:else}
-                        <span>Initialize Link</span>
+                        <span>Sign In</span>
                         <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     {/if}
                 </button>
@@ -134,7 +134,7 @@
             <div class="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 text-center">
                 <p class="text-sm font-bold text-slate-400 dark:text-slate-500">
                     New to the network? 
-                    <a href="/signup" class="text-indigo-600 dark:text-indigo-400 hover:underline ml-1">Establish Vault</a>
+                    <a href="/signup" class="text-indigo-600 dark:text-indigo-400 hover:underline ml-1">Create Account</a>
                 </p>
             </div>
         </div>
