@@ -1,12 +1,13 @@
 <script lang="ts">
-    import '../app.css';
+    import './layout.css';
     import { onMount } from 'svelte';
     import { user, token } from '$lib/stores';
     import api from '$lib/api';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
 
-    let loading = true;
+    let { children } = $props();
+    let loading = $state(true);
 
     onMount(async () => {
         if ($token) {
@@ -23,11 +24,11 @@
         }
     });
 
-    $: {
+    $effect(() => {
         if (!loading && !$token && $page.url.pathname !== '/login' && $page.url.pathname !== '/signup') {
             goto('/login');
         }
-    }
+    });
 </script>
 
 {#if loading}
@@ -35,5 +36,5 @@
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
 {:else}
-    <slot />
+    {@render children()}
 {/if}

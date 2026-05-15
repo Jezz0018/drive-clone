@@ -3,11 +3,11 @@
     import Sidebar from '$lib/components/Sidebar.svelte';
     import FileExplorer from '$lib/components/FileExplorer.svelte';
 
-    let explorer;
+    let explorer = $state<any>();
 </script>
 
 <div class="h-screen flex flex-col">
-    <Header onSearch={(q) => explorer.handleSearch(q)} />
+    <Header onSearch={(q: string) => explorer?.handleSearch(q)} />
     <div class="flex-1 flex overflow-hidden">
         <Sidebar activeView="my-drive" />
         <FileExplorer bind:this={explorer} title="My Drive" />

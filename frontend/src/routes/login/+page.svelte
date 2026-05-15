@@ -3,12 +3,13 @@
     import { token } from '$lib/stores';
     import { goto } from '$app/navigation';
 
-    let email = '';
-    let password = '';
-    let error = '';
-    let loading = false;
+    let email = $state('');
+    let password = $state('');
+    let error = $state('');
+    let loading = $state(false);
 
-    async function handleSubmit() {
+    async function handleSubmit(e: SubmitEvent) {
+        e.preventDefault();
         loading = true;
         error = '';
         try {
@@ -34,7 +35,7 @@
                 Sign in to your account
             </h2>
         </div>
-        <form class="mt-8 space-y-6" on:submit|preventDefault={handleSubmit}>
+        <form class="mt-8 space-y-6" onsubmit={handleSubmit}>
             <div class="rounded-md shadow-sm -space-y-px">
                 <div>
                     <input bind:value={email} type="email" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Email address" />
