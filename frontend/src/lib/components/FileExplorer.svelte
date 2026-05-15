@@ -420,6 +420,8 @@
 {/if}
 
 <style>
+    @reference "tailwindcss";
+
     :global(body) {
         @apply bg-slate-50;
     }
