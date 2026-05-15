@@ -211,7 +211,7 @@
         >
             <div class="w-full h-full border-4 border-dashed border-indigo-600 dark:border-indigo-400 rounded-[40px] flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 animate-pulse">
                 <UploadCloud class="w-24 h-24 mb-6" />
-                <h2 class="text-4xl font-black tracking-tighter">Drop to Secure in JS Vault</h2>
+                <h2 class="text-4xl font-black tracking-tighter">Drop to Secure in DRIVE X</h2>
             </div>
         </div>
     {/if}

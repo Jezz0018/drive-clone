@@ -39,7 +39,7 @@
 </script>
 
 <svelte:head>
-    <title>Sign In | JS Vault</title>
+    <title>Sign In | DRIVE X</title>
 </svelte:head>
 
 <div class="min-h-screen flex bg-white dark:bg-[#0f172a] overflow-hidden">
@@ -50,7 +50,7 @@
                 <div class="bg-white/20 p-2 rounded-2xl backdrop-blur-xl">
                     <Cloud class="w-8 h-8 text-white" />
                 </div>
-                <span class="text-2xl font-black tracking-tighter">JS <span class="text-indigo-200">VAULT</span></span>
+                <span class="text-2xl font-black tracking-tighter">DRIVE <span class="text-indigo-200">X</span></span>
             </div>
             
             <h1 class="text-6xl font-black leading-tight mb-8 tracking-tighter">
@@ -176,7 +176,7 @@
             </div>
 
             <p class="mt-10 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
-                New to JS Vault? 
+                New to DRIVE X? 
                 <a href="/signup" class="text-indigo-600 dark:text-indigo-400 hover:underline">Create an account</a>
             </p>
         </div>
@@ -184,7 +184,7 @@
         <!-- Footer terms -->
         <div class="absolute bottom-8 text-center w-full max-w-md px-8">
             <p class="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">
-                Protected by CloudShield Security © 2026 JS Vault
+                Protected by CloudShield Security © 2026 DRIVE X
             </p>
         </div>
     </div>

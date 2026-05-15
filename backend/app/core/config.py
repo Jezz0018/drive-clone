@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Google Drive Clone"
+    PROJECT_NAME: str = "DRIVE X"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "yoursecretkeyhere")
     ALGORITHM: str = "HS256"

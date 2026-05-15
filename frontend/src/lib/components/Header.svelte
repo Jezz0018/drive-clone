@@ -25,7 +25,7 @@
         </div>
         <div class="flex flex-col -space-y-1">
             <span class="text-xl font-black tracking-tighter text-slate-900 dark:text-white">
-                JS <span class="text-indigo-600">VAULT</span>
+                DRIVE <span class="text-indigo-600">X</span>
             </span>
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Digital Storage</span>
         </div>
@@ -98,7 +98,7 @@
                                 <Cloud class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">Welcome to JS Vault!</p>
+                                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">Welcome to DRIVE X!</p>
                                 <p class="text-[10px] text-slate-500 dark:text-slate-400">Start by uploading your first file.</p>
                             </div>
                         </div>

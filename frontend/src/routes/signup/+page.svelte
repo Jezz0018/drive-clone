@@ -33,7 +33,7 @@
 </script>
 
 <svelte:head>
-    <title>Create Account | JS Vault</title>
+    <title>Create Account | DRIVE X</title>
 </svelte:head>
 
 <div class="min-h-screen flex bg-white dark:bg-[#0f172a] overflow-hidden transition-colors duration-300">
@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <h2 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">Create Account</h2>
-                <p class="text-slate-500 dark:text-slate-400 font-medium">Join JS Vault today and start securing your assets.</p>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">Join DRIVE X today and start securing your assets.</p>
             </div>
 
             <form class="space-y-5" onsubmit={handleSubmit}>
@@ -128,7 +128,7 @@
     <!-- Right: Features Showcase (Hidden on Mobile) -->
     <div class="hidden lg:flex lg:w-1/2 bg-slate-900 relative overflow-hidden flex-col justify-center p-16 text-white transition-colors duration-300">
         <div class="relative z-10 max-w-lg">
-            <h3 class="text-4xl font-black mb-8 tracking-tighter">Why thousands of developers <br />trust <span class="text-indigo-400 underline decoration-4 decoration-indigo-400/30 underline-offset-8">JS Vault.</span></h3>
+            <h3 class="text-4xl font-black mb-8 tracking-tighter">Why thousands of developers <br />trust <span class="text-indigo-400 underline decoration-4 decoration-indigo-400/30 underline-offset-8">DRIVE X.</span></h3>
             
             <div class="space-y-8">
                 <div class="flex items-start space-x-4">

@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-    <title>JS Vault | Your Secure Digital Space</title>
+    <title>DRIVE X | Your Secure Digital Space</title>
 </svelte:head>
 
 {#if loading}
