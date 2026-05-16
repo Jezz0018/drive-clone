@@ -53,7 +53,7 @@
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
                                 <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{$user?.full_name || 'Anonymous User'}</h2>
-                                <p class="text-slate-500 dark:text-slate-400 font-medium">Standard Node Member</p>
+                                <p class="text-slate-500 dark:text-slate-400 font-medium">Standard Active User</p>
                             </div>
                             <div class="flex items-center space-x-3">
                                 <button 

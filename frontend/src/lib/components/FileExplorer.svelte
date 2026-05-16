@@ -45,6 +45,7 @@
         is_trashed: boolean;
         is_archived: boolean;
         category?: string;
+        category_id?: string;
         updated_at: string;
         is_public: boolean;
         sharing_token?: string;
@@ -79,10 +80,21 @@
     let showUploadModal = $state(false);
     let newFolderName = $state('');
     let selectedCategory = $state<string | null>(null);
+    let selectedCategoryId = $state<string | null>(null);
     let fileToUpload = $state<File | null>(null);
     let selectedItemId = $state<string | null>(null);
     let isDragging = $state(false);
     let sharingItem = $state<Item | null>(null);
+    let customCategories = $state<any[]>([]);
+
+    async function fetchCustomCategories() {
+        try {
+            const response = await api.get('/categories/');
+            customCategories = response.data;
+        } catch (e) {
+            // Silently fail
+        }
+    }
 
     async function fetchItems() {
         loading = true;
@@ -105,7 +117,10 @@
         }
     }
 
-    onMount(fetchItems);
+    onMount(() => {
+        fetchItems();
+        fetchCustomCategories();
+    });
 
     export function handleSearch(query: string) {
         searchQuery = query;
@@ -151,10 +166,13 @@
         }
     }
 
-    async function changeCategory(item: Item, newCat: string | null) {
+    async function changeCategory(item: Item, newCat: string | null, newCatId: string | null = null) {
         try {
-            await api.patch(`/items/${item.id}/`, { category: newCat });
-            items = items.map(i => i.id === item.id ? { ...i, category: newCat } : i);
+            await api.patch(`/items/${item.id}/`, { 
+                category: newCat,
+                category_id: newCatId
+            });
+            items = items.map(i => i.id === item.id ? { ...i, category: newCat, category_id: newCatId } : i);
             toasts.success(`Category updated to ${newCat || 'None'}`);
         } catch (e) {
             toasts.error('Failed to update category.');
@@ -198,7 +216,8 @@
             await api.post('/items/folders/', { 
                 name: newFolderName, 
                 parent_id: currentFolderId,
-                category: selectedCategory || undefined
+                category: selectedCategory || undefined,
+                category_id: selectedCategoryId || undefined
             });
             newFolderName = '';
             showUploadModal = false;
@@ -216,6 +235,7 @@
             formData.append('file', fileToUpload);
             if (currentFolderId) formData.append('parent_id', currentFolderId);
             if (selectedCategory) formData.append('category', selectedCategory);
+            if (selectedCategoryId) formData.append('category_id', selectedCategoryId);
             
             await api.post('/items/upload/', formData);
             fileToUpload = null;
@@ -321,14 +341,14 @@
             
             <div class="flex items-center space-x-3">
                 <button 
-                    onclick={() => { showUploadModal = true; selectedCategory = null; fileToUpload = null; newFolderName = 'New Folder'; }}
+                    onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = 'New Folder'; }}
                     class="flex items-center space-x-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm"
                 >
                     <FolderPlus class="w-4 h-4" />
                     <span>New Folder</span>
                 </button>
                 <button 
-                    onclick={() => { showUploadModal = true; selectedCategory = null; fileToUpload = null; newFolderName = ''; }}
+                    onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = ''; }}
                     class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5 py-2.5 shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 font-bold text-sm"
                 >
                     <Plus class="w-4 h-4 stroke-[3px]" />
@@ -437,6 +457,12 @@
                                         <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category === 'work' ? "bg-indigo-100 text-indigo-600 shadow-inner" : "text-slate-400 hover:bg-indigo-50 hover:text-indigo-600")}>Work</button>
                                         <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category === 'personal' ? "bg-emerald-100 text-emerald-600 shadow-inner" : "text-slate-400 hover:bg-emerald-50 hover:text-emerald-600")}>Personal</button>
                                         
+                                        {#each customCategories as cat}
+                                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, cat.name, cat.id); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category_id === cat.id ? "bg-indigo-100 text-indigo-600 shadow-inner" : "text-slate-400 hover:bg-indigo-50 hover:text-indigo-600")}>{cat.name}</button>
+                                        {/each}
+
+                                        <button onclick={(e) => { e.stopPropagation(); changeCategory(item, null, null); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", (item.category === null && !item.category_id) ? "bg-slate-100 text-slate-600 shadow-inner" : "text-slate-400 hover:bg-slate-100 hover:text-slate-600")}>None</button>
+                                        
                                         <div class="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
                                         <button onclick={(e) => { e.stopPropagation(); toggleStar(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", item.is_starred ? "text-amber-500" : "text-slate-400")}>
@@ -504,9 +530,13 @@
                         </div>
 
                         <!-- Direct Category Actions for Grid -->
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 z-20 flex bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl p-1 shadow-2xl border border-slate-100 dark:border-slate-700">
-                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all", item.category === 'work' ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-indigo-600")}>Work</button>
-                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all", item.category === 'personal' ? "bg-emerald-600 text-white" : "text-slate-500 hover:text-emerald-600")}>Personal</button>
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 z-20 flex bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl p-1 shadow-2xl border border-slate-100 dark:border-slate-700 flex-wrap max-w-[200px] justify-center gap-1">
+                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", item.category === 'work' ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-indigo-600")}>Work</button>
+                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", item.category === 'personal' ? "bg-emerald-600 text-white" : "text-slate-500 hover:text-emerald-600")}>Personal</button>
+                            {#each customCategories as cat}
+                                <button onclick={(e) => { e.stopPropagation(); changeCategory(item, cat.name, cat.id); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", item.category_id === cat.id ? `${cat.color} text-white` : "text-slate-500 hover:text-indigo-600")}>{cat.name}</button>
+                            {/each}
+                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, null, null); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", (item.category === null && !item.category_id) ? "bg-slate-600 text-white" : "text-slate-500 hover:text-slate-700")}>None</button>
                         </div>
 
                         <div class={cn(
@@ -554,7 +584,7 @@
             transition:fly={{ y: 40, duration: 400, easing: quintOut }}
         >
             <div class="absolute top-0 right-0 p-8">
-                <button onclick={() => { showUploadModal = false; fileToUpload = null; selectedCategory = null; }} class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl text-slate-400 transition-all active:scale-90">
+                <button onclick={() => { showUploadModal = false; fileToUpload = null; selectedCategory = null; selectedCategoryId = null; }} class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl text-slate-400 transition-all active:scale-90">
                     <X class="w-6 h-6" />
                 </button>
             </div>
@@ -573,31 +603,58 @@
                 <!-- Category Selection -->
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Assign Category</label>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-3 gap-3">
                         <button 
-                            onclick={() => selectedCategory = 'work'}
+                            onclick={() => { selectedCategory = 'work'; selectedCategoryId = null; }}
                             class={cn(
-                                "flex items-center justify-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm",
+                                "flex items-center justify-center space-x-3 p-3 rounded-2xl border-2 transition-all font-bold text-xs",
                                 selectedCategory === 'work' 
                                     ? "bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 shadow-inner" 
                                     : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
                             )}
                         >
-                            <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
-                            <span>Work Project</span>
+                            <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                            <span>Work</span>
                         </button>
                         <button 
-                            onclick={() => selectedCategory = 'personal'}
+                            onclick={() => { selectedCategory = 'personal'; selectedCategoryId = null; }}
                             class={cn(
-                                "flex items-center justify-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm",
+                                "flex items-center justify-center space-x-3 p-3 rounded-2xl border-2 transition-all font-bold text-xs",
                                 selectedCategory === 'personal' 
                                     ? "bg-emerald-50 border-emerald-500 text-emerald-600 dark:bg-emerald-900/20 shadow-inner" 
                                     : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
                             )}
                         >
-                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
                             <span>Personal</span>
                         </button>
+                        <button 
+                            onclick={() => { selectedCategory = null; selectedCategoryId = null; }}
+                            class={cn(
+                                "flex items-center justify-center space-x-3 p-3 rounded-2xl border-2 transition-all font-bold text-xs",
+                                (selectedCategory === null && !selectedCategoryId) 
+                                    ? "bg-slate-200 border-slate-400 text-slate-700 dark:bg-slate-700 dark:text-slate-200 shadow-inner" 
+                                    : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
+                            )}
+                        >
+                            <X class="w-3 h-3" />
+                            <span>None</span>
+                        </button>
+                        
+                        {#each customCategories as cat}
+                            <button 
+                                onclick={() => { selectedCategoryId = cat.id; selectedCategory = cat.name; }}
+                                class={cn(
+                                    "flex items-center justify-center space-x-3 p-3 rounded-2xl border-2 transition-all font-bold text-xs",
+                                    selectedCategoryId === cat.id 
+                                        ? `${cat.color} border-indigo-500 text-white shadow-inner` 
+                                        : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
+                                )}
+                            >
+                                <div class="w-2 h-2 rounded-full bg-white/50"></div>
+                                <span class="truncate">{cat.name}</span>
+                            </button>
+                        {/each}
                     </div>
                 </div>
 

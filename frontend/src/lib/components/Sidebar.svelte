@@ -14,14 +14,34 @@
         Layers,
         Zap,
         LayoutDashboard,
-        Archive
+        Archive,
+        User
     } from 'lucide-svelte';
     import { page } from '$app/stores';
     import { cn } from '$lib/utils';
     import { goto } from '$app/navigation';
     import { toasts } from '$lib/toasts';
+    import CategoryManager from './CategoryManager.svelte';
+    import api from '$lib/api';
 
     let { activeView = 'my-drive' } = $props();
+    let showCategoryManager = $state(false);
+    let customCategories = $state<any[]>([]);
+
+    async function fetchCustomCategories() {
+        try {
+            const response = await api.get('/categories/');
+            customCategories = response.data;
+        } catch (e) {
+            // Silently fail
+        }
+    }
+
+    $effect(() => {
+        if (!showCategoryManager) {
+            fetchCustomCategories();
+        }
+    });
 
     const menuItems = [
         { id: 'my-drive', label: 'My Files', icon: LayoutDashboard, path: '/' },
@@ -32,7 +52,7 @@
         { id: 'trash', label: 'Trash Bin', icon: Trash2, path: '/trash' },
     ];
 
-    const categories = [
+    const coreCategories = [
         { id: 'work', label: 'Work Projects', color: 'bg-indigo-500', path: '/category/work' },
         { id: 'personal', label: 'Personal', color: 'bg-emerald-500', path: '/category/personal' },
     ];
@@ -40,7 +60,8 @@
 
 <aside class="w-80 bg-white dark:bg-slate-900 h-screen flex flex-col border-r border-slate-200/50 dark:border-slate-800/50 z-30 transition-colors duration-300">
     <!-- Navigation -->
-    <nav class="flex-1 px-4 py-8 space-y-8 overflow-y-auto custom-scrollbar">        <!-- Main Section -->
+    <nav class="flex-1 px-4 py-8 space-y-8 overflow-y-auto custom-scrollbar">
+        <!-- Main Section -->
         <div>
             <div class="px-4 mb-4">
                 <span class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Dashboard</span>
@@ -74,14 +95,14 @@
             <div class="px-4 mb-4 flex items-center justify-between">
                 <span class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Categories</span>
                 <button 
-                    onclick={() => toasts.info('Category management coming soon')}
+                    onclick={() => showCategoryManager = true}
                     class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
                     <Plus class="w-3 h-3 text-slate-400" />
                 </button>
             </div>
             <div class="space-y-1">
-                {#each categories as cat}
+                {#each coreCategories as cat}
                     <a 
                         href={cat.path}
                         class={cn(
@@ -98,29 +119,24 @@
                         </div>
                     </a>
                 {/each}
-            </div>
-        </div>
 
-        <!-- Tools Section -->
-        <div>
-            <div class="px-4 mb-4">
-                <span class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Tools</span>
-            </div>
-            <div class="space-y-1 text-slate-600 dark:text-slate-400">
-                <button 
-                    onclick={() => toasts.info('Quick Actions coming soon')}
-                    class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group"
-                >
-                    <Zap class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-colors" />
-                    <span class="font-bold text-sm tracking-tight">Quick Actions</span>
-                </button>
-                <button 
-                    onclick={() => toasts.info('Privacy Scan coming soon')}
-                    class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group"
-                >
-                    <ShieldCheck class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-emerald-500 transition-colors" />
-                    <span class="font-bold text-sm tracking-tight">Privacy Scan</span>
-                </button>
+                {#each customCategories as cat}
+                    <a 
+                        href={`/category/${cat.name.toLowerCase()}`}
+                        class={cn(
+                            "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group text-left",
+                            activeView === `cat-${cat.name.toLowerCase()}` && "bg-indigo-50 dark:bg-indigo-900/20"
+                        )}
+                    >
+                        <div class="flex items-center space-x-3">
+                            <div class={cn("w-2 h-2 rounded-full shadow-sm", cat.color)}></div>
+                            <span class={cn(
+                                "font-bold text-sm transition-colors",
+                                activeView === `cat-${cat.name.toLowerCase()}` ? "text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-100"
+                            )}>{cat.name}</span>
+                        </div>
+                    </a>
+                {/each}
             </div>
         </div>
 
@@ -146,6 +162,10 @@
         </div>
     </nav>
 </aside>
+
+{#if showCategoryManager}
+    <CategoryManager onclose={() => showCategoryManager = false} />
+{/if}
 
 <style>
     @reference "tailwindcss";

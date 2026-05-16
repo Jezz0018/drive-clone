@@ -195,6 +195,7 @@ async def read_items(
     is_starred: Optional[bool] = None,
     is_archived: bool = False,
     category: Optional[str] = None,
+    category_id: Optional[uuid.UUID] = None,
     search: Optional[str] = None,
     shared_with_me: bool = False
 ) -> Any:
@@ -202,14 +203,14 @@ async def read_items(
         # Items shared with current user
         query = (
             select(Item)
-            .options(selectinload(Item.permissions))
+            .options(selectinload(Item.permissions), selectinload(Item.category_obj))
             .join(ItemPermissionModel, Item.id == ItemPermissionModel.item_id)
             .filter(ItemPermissionModel.user_id == current_user.id)
             .filter(Item.is_trashed == False)
         )
     else:
         # User's own items
-        query = select(Item).options(selectinload(Item.permissions)).filter(Item.owner_id == current_user.id)
+        query = select(Item).options(selectinload(Item.permissions), selectinload(Item.category_obj)).filter(Item.owner_id == current_user.id)
         
         if is_trashed:
             query = query.filter(Item.is_trashed == True)
@@ -219,13 +220,15 @@ async def read_items(
             
             if parent_id:
                 query = query.filter(Item.parent_id == parent_id)
-            elif not search and is_starred is None and category is None:
+            elif not search and is_starred is None and category is None and not category_id:
                 query = query.filter(Item.parent_id == None)
                 
     if is_starred is not None:
         query = query.filter(Item.is_starred == is_starred)
         
-    if category:
+    if category_id:
+        query = query.filter(Item.category_id == category_id)
+    elif category:
         query = query.filter(Item.category == category)
         
     if search:
@@ -248,7 +251,8 @@ async def create_folder(
         is_folder=True,
         parent_id=folder_in.parent_id,
         owner_id=current_user.id,
-        category=getattr(folder_in, 'category', None)
+        category=folder_in.category,
+        category_id=folder_in.category_id
     )
     db.add(db_obj)
     await db.commit()
@@ -262,7 +266,8 @@ async def upload_file(
     current_user: User = Depends(deps.get_current_user),
     file: UploadFile = File(...),
     parent_id: Optional[uuid.UUID] = Form(None),
-    category: Optional[str] = Form(None)
+    category: Optional[str] = Form(None),
+    category_id: Optional[uuid.UUID] = Form(None)
 ) -> Any:
     file_id = uuid.uuid4()
     file_ext = os.path.splitext(file.filename)[1]
@@ -284,7 +289,8 @@ async def upload_file(
         file_path=saved_filename,
         parent_id=parent_id,
         owner_id=current_user.id,
-        category=category
+        category=category,
+        category_id=category_id
     )
     db.add(db_obj)
     await db.commit()
@@ -301,7 +307,7 @@ async def update_item(
 ) -> Any:
     result = await db.execute(
         select(Item)
-        .options(selectinload(Item.permissions))
+        .options(selectinload(Item.permissions), selectinload(Item.category_obj))
         .filter(Item.id == item_id, Item.owner_id == current_user.id)
     )
     db_obj = result.scalars().first()

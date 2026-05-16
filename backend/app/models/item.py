@@ -27,6 +27,7 @@ class Item(Base):
     trashed_at = Column(DateTime, nullable=True)
     is_archived = Column(Boolean, default=False)
     category = Column(String, nullable=True) # e.g., 'personal', 'work', 'project'
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     
     # Sharing
     is_public = Column(Boolean, default=False)
@@ -38,3 +39,4 @@ class Item(Base):
     owner = relationship("User", back_populates="items")
     parent = relationship("Item", remote_side=[id], backref="children")
     permissions = relationship("ItemPermission", back_populates="item", cascade="all, delete-orphan")
+    category_obj = relationship("Category", back_populates="items")

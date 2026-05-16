@@ -118,7 +118,7 @@
                 </div>
                 <div class="text-left hidden lg:block leading-tight">
                     <p class="text-sm font-bold text-slate-800 dark:text-white">{$user?.full_name || 'User'}</p>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{$user?.is_active ? 'Active Node' : 'Inactive'}</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{$user?.is_active ? 'Active User' : 'Inactive'}</p>
                 </div>
             </button>
 
@@ -132,7 +132,7 @@
                         <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{$user?.email || 'Unknown Email'}</p>
                     </div>
                     <button 
-                        onclick={() => toasts.info('Profile settings coming soon')}
+                        onclick={() => { showSettings = false; goto('/profile'); }}
                         class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
                     >
                         <User class="w-4 h-4" />

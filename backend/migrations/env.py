@@ -13,6 +13,7 @@ from app.models.item import Item
 from app.models.item_permission import ItemPermission
 from app.models.captcha import Captcha
 from app.models.user_otp import UserOTP
+from app.models.category import Category
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

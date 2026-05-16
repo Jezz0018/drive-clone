@@ -3,12 +3,14 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from app.schemas.item_permission import ItemPermission
+from app.schemas.category import Category as CategorySchema
 
 class ItemBase(BaseModel):
     name: str
     is_folder: bool = False
     parent_id: Optional[UUID] = None
     category: Optional[str] = None
+    category_id: Optional[UUID] = None
 
 class ItemCreate(ItemBase):
     pass
@@ -20,6 +22,7 @@ class ItemUpdate(BaseModel):
     is_trashed: Optional[bool] = None
     is_archived: Optional[bool] = None
     category: Optional[str] = None
+    category_id: Optional[UUID] = None
 
 class Item(ItemBase):
     id: UUID
@@ -35,6 +38,7 @@ class Item(ItemBase):
     created_at: datetime
     updated_at: datetime
     permissions: List[ItemPermission] = []
+    category_obj: Optional[CategorySchema] = None
 
     class Config:
         from_attributes = True
@@ -46,3 +50,4 @@ class FolderCreate(BaseModel):
     name: str
     parent_id: Optional[UUID] = None
     category: Optional[str] = None
+    category_id: Optional[UUID] = None
