@@ -123,6 +123,27 @@
                 </button>
             </div>
         </div>
+
+        <!-- Account Section -->
+        <div>
+            <div class="px-4 mb-4">
+                <span class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Account</span>
+            </div>
+            <div class="space-y-1">
+                <a 
+                    href="/profile"
+                    class={cn(
+                        "flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all group",
+                        activeView === 'profile' 
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" 
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    )}
+                >
+                    <User class={cn("w-5 h-5 transition-colors", activeView === 'profile' ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500 group-hover:text-indigo-600")} />
+                    <span class="font-bold text-sm tracking-tight">Profile Settings</span>
+                </a>
+            </div>
+        </div>
     </nav>
 </aside>
 
