@@ -6,7 +6,9 @@ from datetime import datetime
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
+    phone_number: Optional[str] = None
     is_active: Optional[bool] = True
+    is_verified: Optional[bool] = False
 
 class UserCreate(UserBase):
     email: EmailStr
@@ -21,6 +23,10 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    code: str
 
 class Token(BaseModel):
     access_token: str

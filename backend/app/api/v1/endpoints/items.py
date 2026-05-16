@@ -2,6 +2,7 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
+from sqlalchemy.orm import selectinload
 from app.api import deps
 from app.models.item import Item
 from app.models.user import User
@@ -11,10 +12,57 @@ import os
 import aiofiles
 from app.core.config import settings
 from datetime import datetime
+import secrets
 
 from fastapi.responses import FileResponse
 
 router = APIRouter()
+
+@router.get("/share/{token}")
+async def get_shared_item(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    token: str
+) -> Any:
+    result = await db.execute(select(Item).filter(Item.sharing_token == token, Item.is_public == True))
+    db_obj = result.scalars().first()
+    if not db_obj or db_obj.is_folder:
+        raise HTTPException(status_code=404, detail="Shared file not found")
+    
+    file_path = os.path.join(settings.UPLOAD_DIR, db_obj.file_path)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Physical file not found")
+        
+    return FileResponse(
+        path=file_path,
+        filename=db_obj.name,
+        media_type=db_obj.mime_type
+    )
+
+@router.post("/{item_id}/share", response_model=ItemSchema)
+async def toggle_item_share(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
+    item_id: uuid.UUID
+) -> Any:
+    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    db_obj = result.scalars().first()
+    if not db_obj:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if db_obj.is_public:
+        db_obj.is_public = False
+        # We can keep the token or clear it, clearing it makes it "more secure" if re-shared
+        db_obj.sharing_token = None
+    else:
+        db_obj.is_public = True
+        db_obj.sharing_token = secrets.token_urlsafe(16)
+        
+    db.add(db_obj)
+    await db.commit()
+    await db.refresh(db_obj)
+    return db_obj
 
 @router.get("/{item_id}/download")
 async def download_file(
@@ -38,6 +86,106 @@ async def download_file(
         media_type=db_obj.mime_type
     )
 
+from app.models.item_permission import ItemPermission as ItemPermissionModel
+from app.schemas.item_permission import ItemPermission as ItemPermissionSchema, ItemPermissionCreate, ItemPermissionUpdate
+
+@router.post("/{item_id}/permissions", response_model=ItemPermissionSchema)
+async def add_item_permission(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
+    item_id: uuid.UUID,
+    permission_in: ItemPermissionCreate
+) -> Any:
+    # Check if user owns the item
+    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    item = result.scalars().first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found or access denied")
+    
+    # Find user by email
+    result = await db.execute(select(User).filter(User.email == permission_in.user_email))
+    target_user = result.scalars().first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User with this email not found")
+    
+    if target_user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot share an item with yourself")
+
+    # Check if permission already exists
+    result = await db.execute(select(ItemPermissionModel).filter(
+        ItemPermissionModel.item_id == item_id, 
+        ItemPermissionModel.user_id == target_user.id
+    ))
+    existing_perm = result.scalars().first()
+    if existing_perm:
+        existing_perm.level = permission_in.level
+        db.add(existing_perm)
+    else:
+        db_obj = ItemPermissionModel(
+            item_id=item_id,
+            user_id=target_user.id,
+            level=permission_in.level
+        )
+        db.add(db_obj)
+        
+    await db.commit()
+    # For response, we need the email
+    perm = existing_perm if existing_perm else db_obj
+    await db.refresh(perm)
+    setattr(perm, 'user_email', target_user.email)
+    return perm
+
+@router.delete("/{item_id}/permissions/{permission_id}", response_model=ItemPermissionSchema)
+async def delete_item_permission(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
+    item_id: uuid.UUID,
+    permission_id: uuid.UUID
+) -> Any:
+    # Only owner can remove permissions
+    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    item = result.scalars().first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    result = await db.execute(select(ItemPermissionModel).filter(ItemPermissionModel.id == permission_id, ItemPermissionModel.item_id == item_id))
+    perm = result.scalars().first()
+    if not perm:
+        raise HTTPException(status_code=404, detail="Permission not found")
+        
+    await db.delete(perm)
+    await db.commit()
+    return perm
+
+@router.get("/{item_id}/permissions", response_model=List[ItemPermissionSchema])
+async def list_item_permissions(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user),
+    item_id: uuid.UUID
+) -> Any:
+    # Only owner can see permissions list
+    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    item = result.scalars().first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    result = await db.execute(
+        select(ItemPermissionModel, User.email)
+        .join(User, ItemPermissionModel.user_id == User.id)
+        .filter(ItemPermissionModel.item_id == item_id)
+    )
+    rows = result.all()
+    perms = []
+    for row in rows:
+        perm = row[0]
+        email = row[1]
+        setattr(perm, 'user_email', email)
+        perms.append(perm)
+    return perms
+
 @router.get("/", response_model=List[ItemSchema])
 async def read_items(
     db: AsyncSession = Depends(deps.get_db),
@@ -45,21 +193,40 @@ async def read_items(
     parent_id: Optional[uuid.UUID] = None,
     is_trashed: bool = False,
     is_starred: Optional[bool] = None,
-    search: Optional[str] = None
+    is_archived: bool = False,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    shared_with_me: bool = False
 ) -> Any:
-    query = select(Item).filter(Item.owner_id == current_user.id)
-    
-    if is_trashed:
-        query = query.filter(Item.is_trashed == True)
+    if shared_with_me:
+        # Items shared with current user
+        query = (
+            select(Item)
+            .options(selectinload(Item.permissions))
+            .join(ItemPermissionModel, Item.id == ItemPermissionModel.item_id)
+            .filter(ItemPermissionModel.user_id == current_user.id)
+            .filter(Item.is_trashed == False)
+        )
     else:
-        query = query.filter(Item.is_trashed == False)
-        if parent_id:
-            query = query.filter(Item.parent_id == parent_id)
-        elif not search and is_starred is None:
-            query = query.filter(Item.parent_id == None)
+        # User's own items
+        query = select(Item).options(selectinload(Item.permissions)).filter(Item.owner_id == current_user.id)
+        
+        if is_trashed:
+            query = query.filter(Item.is_trashed == True)
+        else:
+            query = query.filter(Item.is_trashed == False)
+            query = query.filter(Item.is_archived == is_archived)
             
+            if parent_id:
+                query = query.filter(Item.parent_id == parent_id)
+            elif not search and is_starred is None and category is None:
+                query = query.filter(Item.parent_id == None)
+                
     if is_starred is not None:
         query = query.filter(Item.is_starred == is_starred)
+        
+    if category:
+        query = query.filter(Item.category == category)
         
     if search:
         query = query.filter(Item.name.ilike(f"%{search}%"))
@@ -80,7 +247,8 @@ async def create_folder(
         name=folder_in.name,
         is_folder=True,
         parent_id=folder_in.parent_id,
-        owner_id=current_user.id
+        owner_id=current_user.id,
+        category=getattr(folder_in, 'category', None)
     )
     db.add(db_obj)
     await db.commit()
@@ -93,7 +261,8 @@ async def upload_file(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
     file: UploadFile = File(...),
-    parent_id: Optional[uuid.UUID] = Form(None)
+    parent_id: Optional[uuid.UUID] = Form(None),
+    category: Optional[str] = Form(None)
 ) -> Any:
     file_id = uuid.uuid4()
     file_ext = os.path.splitext(file.filename)[1]
@@ -114,7 +283,8 @@ async def upload_file(
         mime_type=file.content_type,
         file_path=saved_filename,
         parent_id=parent_id,
-        owner_id=current_user.id
+        owner_id=current_user.id,
+        category=category
     )
     db.add(db_obj)
     await db.commit()
@@ -129,7 +299,11 @@ async def update_item(
     item_id: uuid.UUID,
     item_in: ItemUpdate
 ) -> Any:
-    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    result = await db.execute(
+        select(Item)
+        .options(selectinload(Item.permissions))
+        .filter(Item.id == item_id, Item.owner_id == current_user.id)
+    )
     db_obj = result.scalars().first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Item not found")

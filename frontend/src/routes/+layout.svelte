@@ -55,7 +55,7 @@
         </div>
     </div>
 {:else}
-    <div class="min-h-screen bg-slate-50 dark:bg-[#0f172a] transition-colors duration-300 text-slate-900 dark:text-slate-100">
+    <div class="min-h-screen transition-colors duration-300">
         {@render children()}
     </div>
 {/if}

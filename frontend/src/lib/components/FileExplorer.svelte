@@ -26,12 +26,14 @@
         Image as ImageIcon,
         Music,
         Video,
-        FileCode
+        FileCode,
+        Archive as ArchiveIcon
     } from 'lucide-svelte';
     import { cn } from '$lib/utils';
     import { fade, fly, scale, slide } from 'svelte/transition';
     import { quintOut } from 'svelte/easing';
     import { toasts } from '$lib/toasts';
+    import ShareModal from './ShareModal.svelte';
 
     interface Item {
         id: string;
@@ -41,19 +43,30 @@
         mime_type?: string;
         is_starred: boolean;
         is_trashed: boolean;
+        is_archived: boolean;
+        category?: string;
         updated_at: string;
+        is_public: boolean;
+        sharing_token?: string;
+        permissions?: any[];
     }
 
     let { 
-        title = "My Assets", 
+        title = "My Files", 
         isStarred = undefined, 
         isTrashed = false, 
-        isRecent = false 
+        isRecent = false,
+        isArchived = false,
+        category = undefined,
+        sharedWithMe = false
     } = $props<{
         title?: string;
         isStarred?: boolean;
         isTrashed?: boolean;
         isRecent?: boolean;
+        isArchived?: boolean;
+        category?: string;
+        sharedWithMe?: boolean;
     }>();
 
     let items = $state<Item[]>([]);
@@ -65,9 +78,11 @@
     
     let showUploadModal = $state(false);
     let newFolderName = $state('');
+    let selectedCategory = $state<string | null>(null);
     let fileToUpload = $state<File | null>(null);
     let selectedItemId = $state<string | null>(null);
     let isDragging = $state(false);
+    let sharingItem = $state<Item | null>(null);
 
     async function fetchItems() {
         loading = true;
@@ -76,7 +91,10 @@
                 parent_id: currentFolderId,
                 search: searchQuery || undefined,
                 is_starred: isStarred,
-                is_trashed: isTrashed
+                is_trashed: isTrashed,
+                is_archived: isArchived,
+                category: category || undefined,
+                shared_with_me: sharedWithMe
             };
             const response = await api.get('/items/', { params });
             items = response.data;
@@ -123,6 +141,26 @@
         }
     }
 
+    async function toggleArchive(item: Item) {
+        try {
+            await api.patch(`/items/${item.id}/`, { is_archived: !item.is_archived });
+            items = items.filter(i => i.id !== item.id);
+            toasts.success(!item.is_archived ? 'Moved to archive' : 'Restored from archive');
+        } catch (e) {
+            toasts.error('Action failed.');
+        }
+    }
+
+    async function changeCategory(item: Item, newCat: string | null) {
+        try {
+            await api.patch(`/items/${item.id}/`, { category: newCat });
+            items = items.map(i => i.id === item.id ? { ...i, category: newCat } : i);
+            toasts.success(`Category updated to ${newCat || 'None'}`);
+        } catch (e) {
+            toasts.error('Failed to update category.');
+        }
+    }
+
     async function moveToTrash(item: Item) {
         try {
             await api.delete(`/items/${item.id}/`);
@@ -136,6 +174,10 @@
     function downloadFile(item: Item) {
         window.open(`${BASE_URL}/items/${item.id}/download/`, '_blank');
         toasts.info(`Downloading ${item.name}...`);
+    }
+
+    async function openShareModal(item: Item) {
+        sharingItem = item;
     }
 
     function openFolder(folder: Item) {
@@ -153,7 +195,11 @@
     async function createFolder() {
         if (!newFolderName) return;
         try {
-            await api.post('/items/folders/', { name: newFolderName, parent_id: currentFolderId });
+            await api.post('/items/folders/', { 
+                name: newFolderName, 
+                parent_id: currentFolderId,
+                category: selectedCategory || undefined
+            });
             newFolderName = '';
             showUploadModal = false;
             fetchItems();
@@ -169,12 +215,13 @@
             const formData = new FormData();
             formData.append('file', fileToUpload);
             if (currentFolderId) formData.append('parent_id', currentFolderId);
+            if (selectedCategory) formData.append('category', selectedCategory);
             
             await api.post('/items/upload/', formData);
             fileToUpload = null;
             showUploadModal = false;
             fetchItems();
-            toasts.success('Asset uploaded to drive.');
+            toasts.success('File uploaded to drive.');
         } catch (e) {
             toasts.error('Upload failed.');
         }
@@ -272,14 +319,22 @@
                 </button>
             </div>
             
-            <button 
-                id="create-btn"
-                onclick={() => showUploadModal = true}
-                class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[18px] px-6 py-3.5 shadow-xl shadow-indigo-200 dark:shadow-none transition-all active:scale-95 font-bold text-sm tracking-tight"
-            >
-                <Plus class="w-4 h-4 stroke-[3px]" />
-                <span>New Asset</span>
-            </button>
+            <div class="flex items-center space-x-3">
+                <button 
+                    onclick={() => { showUploadModal = true; selectedCategory = null; fileToUpload = null; newFolderName = 'New Folder'; }}
+                    class="flex items-center space-x-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm"
+                >
+                    <FolderPlus class="w-4 h-4" />
+                    <span>New Folder</span>
+                </button>
+                <button 
+                    onclick={() => { showUploadModal = true; selectedCategory = null; fileToUpload = null; newFolderName = ''; }}
+                    class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5 py-2.5 shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 font-bold text-sm"
+                >
+                    <Plus class="w-4 h-4 stroke-[3px]" />
+                    <span>Upload File</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -307,13 +362,13 @@
                 </div>
                 <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-3">Your Cloud Drive is Ready</h3>
                 <p class="text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">
-                    Organize your assets, collaborate with your team, and access your data from anywhere in the universe.
+                    Organize your files, collaborate with your team, and access your data from anywhere in the universe.
                 </p>
                 <button 
                     onclick={() => showUploadModal = true}
                     class="mt-10 px-8 py-4 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-black rounded-2xl border-2 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
                 >
-                    Upload Your First Asset
+                    Upload Your First File
                 </button>
             </div>
         {:else if viewMode === 'list'}
@@ -321,7 +376,7 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                            <th class="py-5 px-8">Asset Name</th>
+                            <th class="py-5 px-8">File Name</th>
                             <th class="py-5 px-8 hidden md:table-cell">Modification Date</th>
                             <th class="py-5 px-8 hidden sm:table-cell">Metadata</th>
                             <th class="py-5 px-8 text-right">Actions</th>
@@ -354,9 +409,19 @@
                                             {:else}
                                                 <span class="font-black text-slate-900 dark:text-white text-sm truncate tracking-tight">{item.name}</span>
                                             {/if}
-                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1 truncate">
-                                                {item.is_folder ? 'Folder Container' : item.mime_type || 'Unclassified Data'}
-                                            </span>
+                                            <div class="flex items-center space-x-2 mt-1">
+                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">
+                                                    {item.is_folder ? 'Folder Container' : item.mime_type || 'Unclassified Data'}
+                                                </span>
+                                                {#if item.category}
+                                                    <span class={cn(
+                                                        "text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest",
+                                                        item.category === 'work' ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400" : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                                    )}>
+                                                        {item.category}
+                                                    </span>
+                                                {/if}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
@@ -367,9 +432,21 @@
                                     <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">{item.is_folder ? 'CONTAINER' : formatSize(item.size)}</span>
                                 </td>
                                 <td class="py-5 px-8 text-right">
-                                    <div class="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                    <div class="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                        <!-- Inline Category Options -->
+                                        <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category === 'work' ? "bg-indigo-100 text-indigo-600 shadow-inner" : "text-slate-400 hover:bg-indigo-50 hover:text-indigo-600")}>Work</button>
+                                        <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category === 'personal' ? "bg-emerald-100 text-emerald-600 shadow-inner" : "text-slate-400 hover:bg-emerald-50 hover:text-emerald-600")}>Personal</button>
+                                        
+                                        <div class="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
                                         <button onclick={(e) => { e.stopPropagation(); toggleStar(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", item.is_starred ? "text-amber-500" : "text-slate-400")}>
                                             <Star class={cn("w-4 h-4", item.is_starred && "fill-current")} />
+                                        </button>
+                                        <button onclick={(e) => { e.stopPropagation(); toggleArchive(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", item.is_archived ? "text-indigo-600" : "text-slate-400")}>
+                                            <ArchiveIcon class="w-4 h-4" />
+                                        </button>
+                                        <button onclick={(e) => { e.stopPropagation(); openShareModal(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", (item.is_public || (item.permissions && item.permissions.length > 0)) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}>
+                                            <Share2 class="w-4 h-4" />
                                         </button>
                                         {#if !item.is_folder}
                                             <button onclick={(e) => { e.stopPropagation(); downloadFile(item); }} class="p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
@@ -400,14 +477,36 @@
                         onclick={() => selectedItemId = item.id}
                         in:scale={{ duration: 400, start: 0.9, easing: quintOut }}
                     >
+                        <!-- Category Badge -->
+                        {#if item.category}
+                            <div class="absolute top-6 left-6 z-20">
+                                <div class={cn(
+                                    "w-3 h-3 rounded-full shadow-sm ring-4 ring-white dark:ring-slate-800",
+                                    item.category === 'work' ? "bg-indigo-500" : "bg-emerald-500"
+                                )}></div>
+                            </div>
+                        {/if}
+
                         <!-- Quick Actions Float -->
                         <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 z-20 flex space-x-1">
                             <button onclick={(e) => { e.stopPropagation(); toggleStar(item); }} class={cn("p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700", item.is_starred ? "text-amber-500" : "text-slate-400 hover:text-amber-500")}>
                                 <Star class={cn("w-3.5 h-3.5", item.is_starred && "fill-current")} />
                             </button>
+                            <button onclick={(e) => { e.stopPropagation(); toggleArchive(item); }} class={cn("p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700", item.is_archived ? "text-indigo-600" : "text-slate-400 hover:text-indigo-600")}>
+                                <ArchiveIcon class="w-3.5 h-3.5" />
+                            </button>
+                            <button onclick={(e) => { e.stopPropagation(); openShareModal(item); }} class={cn("p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700", (item.is_public || (item.permissions && item.permissions.length > 0)) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-indigo-600")}>
+                                <Share2 class="w-3.5 h-3.5" />
+                            </button>
                             <button onclick={(e) => { e.stopPropagation(); moveToTrash(item); }} class="p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500">
                                 <Trash class="w-3.5 h-3.5" />
                             </button>
+                        </div>
+
+                        <!-- Direct Category Actions for Grid -->
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 z-20 flex bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl p-1 shadow-2xl border border-slate-100 dark:border-slate-700">
+                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all", item.category === 'work' ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-indigo-600")}>Work</button>
+                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all", item.category === 'personal' ? "bg-emerald-600 text-white" : "text-slate-500 hover:text-emerald-600")}>Personal</button>
                         </div>
 
                         <div class={cn(
@@ -455,7 +554,7 @@
             transition:fly={{ y: 40, duration: 400, easing: quintOut }}
         >
             <div class="absolute top-0 right-0 p-8">
-                <button onclick={() => { showUploadModal = false; fileToUpload = null; }} class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl text-slate-400 transition-all active:scale-90">
+                <button onclick={() => { showUploadModal = false; fileToUpload = null; selectedCategory = null; }} class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl text-slate-400 transition-all active:scale-90">
                     <X class="w-6 h-6" />
                 </button>
             </div>
@@ -465,81 +564,113 @@
                     <Plus class="w-7 h-7 text-white stroke-[3px]" />
                 </div>
                 <div>
-                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-1">Upload New Asset</h2>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-1">{fileToUpload || !newFolderName ? 'Upload New File' : 'Create New Folder'}</h2>
                     <p class="text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-widest">Storage Management System</p>
                 </div>
             </div>
             
-            <div class="space-y-10">
-                <!-- Create Folder Section -->
+            <div class="space-y-8">
+                <!-- Category Selection -->
                 <div>
-                    <label for="folder-name" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">New Folder</label>
-                    <div class="flex space-x-3">
-                        <div class="relative flex-1 group">
-                            <FolderPlus class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                            <input 
-                                id="folder-name" 
-                                bind:value={newFolderName} 
-                                type="text" 
-                                placeholder="Identification label..." 
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-[24px] pl-14 pr-6 py-4 text-sm font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500/30 focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-900/10 transition-all outline-none text-slate-700 dark:text-slate-200" 
-                            />
-                        </div>
-                        <button onclick={createFolder} class="bg-slate-900 dark:bg-indigo-600 hover:bg-black dark:hover:bg-indigo-700 text-white px-8 rounded-[24px] text-sm font-black transition-all active:scale-95 shadow-xl shadow-slate-200 dark:shadow-none">CREATE</button>
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Assign Category</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button 
+                            onclick={() => selectedCategory = 'work'}
+                            class={cn(
+                                "flex items-center justify-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm",
+                                selectedCategory === 'work' 
+                                    ? "bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 shadow-inner" 
+                                    : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
+                            )}
+                        >
+                            <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
+                            <span>Work Project</span>
+                        </button>
+                        <button 
+                            onclick={() => selectedCategory = 'personal'}
+                            class={cn(
+                                "flex items-center justify-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm",
+                                selectedCategory === 'personal' 
+                                    ? "bg-emerald-50 border-emerald-500 text-emerald-600 dark:bg-emerald-900/20 shadow-inner" 
+                                    : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
+                            )}
+                        >
+                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                            <span>Personal</span>
+                        </button>
                     </div>
-                </div>
-                
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="w-full border-t border-slate-100 dark:border-slate-800"></div></div>
-                    <div class="relative flex justify-center text-xs uppercase font-black text-slate-300 dark:text-slate-700"><span class="px-6 bg-white dark:bg-slate-900 transition-colors">OR UPLOAD FILE</span></div>
                 </div>
 
-                <!-- Upload Section -->
-                <div>
-                    <div 
-                        class={cn(
-                            "group relative bg-slate-50 dark:bg-slate-800/50 border-4 border-dashed rounded-[40px] p-12 transition-all duration-500",
-                            fileToUpload 
-                                ? "border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/20" 
-                                : "border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800"
-                        )}
-                    >
-                        <input 
-                            id="file-upload" 
-                            type="file" 
-                            onchange={handleFileChange} 
-                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                        />
-                        <div class="text-center">
-                            <div class={cn(
-                                "w-20 h-20 rounded-[32px] shadow-sm flex items-center justify-center mx-auto mb-6 transition-all duration-500 group-hover:scale-110",
-                                fileToUpload ? "bg-indigo-600 text-white rotate-0" : "bg-white dark:bg-slate-700 text-indigo-500 -rotate-6"
-                            )}>
-                                <UploadCloud class="w-10 h-10" />
+                {#if !fileToUpload && newFolderName}
+                    <!-- Create Folder Section -->
+                    <div>
+                        <label for="folder-name" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Folder Name</label>
+                        <div class="flex space-x-3">
+                            <div class="relative flex-1 group">
+                                <FolderPlus class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                <input 
+                                    id="folder-name" 
+                                    bind:value={newFolderName} 
+                                    type="text" 
+                                    placeholder="Identification label..." 
+                                    class="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-[24px] pl-14 pr-6 py-4 text-sm font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500/30 focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-900/10 transition-all outline-none text-slate-700 dark:text-slate-200" 
+                                />
                             </div>
-                            <h3 class="text-lg font-black text-slate-900 dark:text-white mb-1 tracking-tight">
-                                {fileToUpload ? fileToUpload.name : 'Upload Data to Drive'}
-                            </h3>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">
-                                {fileToUpload ? `${formatSize(fileToUpload.size)} File` : 'Drag fragments or click to locate'}
-                            </p>
+                            <button onclick={createFolder} class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 rounded-[24px] text-sm font-black transition-all active:scale-95 shadow-xl shadow-slate-200 dark:shadow-none">CREATE</button>
                         </div>
                     </div>
-                    
-                    {#if fileToUpload}
-                        <button 
-                            onclick={uploadFile} 
-                            class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-[28px] text-lg font-black shadow-2xl shadow-indigo-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center space-x-3"
-                            in:slide
+                {:else}
+                    <!-- Upload Section -->
+                    <div>
+                        <div 
+                            class={cn(
+                                "group relative bg-slate-50 dark:bg-slate-800/50 border-4 border-dashed rounded-[40px] p-12 transition-all duration-500",
+                                fileToUpload 
+                                    ? "border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/20" 
+                                    : "border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800"
+                            )}
                         >
-                            <span>UPLOAD ASSET</span>
-                            <ArrowLeft class="w-6 h-6 rotate-180" />
-                        </button>
-                    {/if}
-                </div>
+                            <input 
+                                id="file-upload" 
+                                type="file" 
+                                onchange={handleFileChange} 
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                            />
+                            <div class="text-center">
+                                <div class={cn(
+                                    "w-20 h-20 rounded-[32px] shadow-sm flex items-center justify-center mx-auto mb-6 transition-all duration-500 group-hover:scale-110",
+                                    fileToUpload ? "bg-indigo-600 text-white rotate-0" : "bg-white dark:bg-slate-700 text-indigo-500 -rotate-6"
+                                )}>
+                                    <UploadCloud class="w-10 h-10" />
+                                </div>
+                                <h3 class="text-lg font-black text-slate-900 dark:text-white mb-1 tracking-tight">
+                                    {fileToUpload ? fileToUpload.name : 'Upload Data to Drive'}
+                                </h3>
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                                    {fileToUpload ? `${formatSize(fileToUpload.size)} File` : 'Drag fragments or click to locate'}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {#if fileToUpload}
+                            <button 
+                                onclick={uploadFile} 
+                                class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-[28px] text-lg font-black shadow-2xl shadow-indigo-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center space-x-3"
+                                in:slide
+                            >
+                                <span>UPLOAD FILE</span>
+                                <ArrowLeft class="w-6 h-6 rotate-180" />
+                            </button>
+                        {/if}
+                    </div>
+                {/if}
             </div>
         </div>
     </div>
+{/if}
+
+{#if sharingItem}
+    <ShareModal item={sharingItem} onclose={() => sharingItem = null} />
 {/if}
 
 <style>

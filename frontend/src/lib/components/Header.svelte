@@ -5,6 +5,7 @@
     import { cn } from '$lib/utils';
     import { theme } from '$lib/theme.svelte';
     import { fade, slide } from 'svelte/transition';
+    import { toasts } from '$lib/toasts';
 
     let { viewMode = $bindable('list'), onSearch = (query: string) => {} } = $props();
 
@@ -70,18 +71,6 @@
                 <div in:fade><Sun class="w-5 h-5" /></div>
             {/if}
         </button>
-
-        <button 
-            onclick={() => viewMode = viewMode === 'list' ? 'grid' : 'list'} 
-            class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all"
-            title="Toggle View"
-        >
-            {#if viewMode === 'list'}
-                <Grid class="w-5 h-5" />
-            {:else}
-                <List class="w-5 h-5" />
-            {/if}
-        </button>
         
         <div class="relative">
             <button 
@@ -142,11 +131,17 @@
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Personal Account</p>
                         <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{$user?.email || 'Unknown Email'}</p>
                     </div>
-                    <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors">
+                    <button 
+                        onclick={() => toasts.info('Profile settings coming soon')}
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
+                    >
                         <User class="w-4 h-4" />
                         <span>Profile Settings</span>
                     </button>
-                    <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors">
+                    <button 
+                        onclick={() => toasts.info('Security & Privacy settings coming soon')}
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
+                    >
                         <Settings class="w-4 h-4" />
                         <span>Security & Privacy</span>
                     </button>

@@ -17,21 +17,27 @@
   --color-sage-200: #c5d1cb;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     color-scheme: light;
-    --bg-main: var(--color-bg-light);
-    --surface-main: var(--color-surface-light);
+    --bg-main: #f8fafc;
+    --surface-main: #ffffff;
+    --text-main: #0f172a;
   }
   
   :root.dark {
     color-scheme: dark;
-    --bg-main: var(--color-bg-dark);
-    --surface-main: var(--color-surface-dark);
+    --bg-main: #020617;
+    --surface-main: #0f172a;
+    --text-main: #f8fafc;
   }
 
-  body {
-    @apply transition-colors duration-500 bg-[var(--bg-main)] text-slate-900 dark:text-slate-100;
+  html, body {
+    @apply transition-colors duration-500 bg-[var(--bg-main)] text-[var(--text-main)];
+    height: 100%;
+    margin: 0;
   }
 
   /* Custom Scrollbar for modern look */
@@ -47,6 +53,39 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors;
   }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50;
+  }
+  
+  .card-elevated {
+    @apply bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl px-6 py-3 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all active:scale-95;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
 }
 
 @layer components {

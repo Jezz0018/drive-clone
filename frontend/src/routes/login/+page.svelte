@@ -1,8 +1,9 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import api from '$lib/api';
     import { token, user } from '$lib/stores';
     import { goto } from '$app/navigation';
-    import { Cloud, Lock, Mail, ArrowRight, Sun, Moon } from 'lucide-svelte';
+    import { Cloud, Lock, Mail, ArrowRight, Sun, Moon, RefreshCw, ShieldCheck } from 'lucide-svelte';
     import { fade, fly } from 'svelte/transition';
     import { toasts } from '$lib/toasts';
     import { theme } from '$lib/theme.svelte';
@@ -11,14 +12,32 @@
     let email = $state('');
     let password = $state('');
     let loading = $state(false);
+    let captcha = $state<{id: string, challenge: string} | null>(null);
+    let captchaAnswer = $state('');
+
+    async function fetchCaptcha() {
+        try {
+            const response = await api.get('/auth/captcha');
+            captcha = response.data;
+            captchaAnswer = '';
+        } catch (e) {
+            toasts.error('Failed to load security challenge');
+        }
+    }
+
+    onMount(fetchCaptcha);
 
     async function handleSubmit(e: SubmitEvent) {
         e.preventDefault();
+        if (!captcha) return;
+        
         loading = true;
         try {
             const formData = new FormData();
             formData.append('username', email);
             formData.append('password', password);
+            formData.append('captcha_id', captcha.id);
+            formData.append('captcha_answer', captchaAnswer);
 
             const response = await api.post('/auth/login/access-token', formData);
             token.set(response.data.access_token);
@@ -30,6 +49,7 @@
             goto('/');
         } catch (e: any) {
             toasts.error(e.response?.data?.detail || 'Authentication failed');
+            fetchCaptcha(); // Refresh captcha on failure
         } finally {
             loading = false;
         }
@@ -115,11 +135,46 @@
                             />
                         </div>
                     </div>
+
+                    <!-- Captcha Section -->
+                    <div class="space-y-3 pt-2">
+                        <label for="captcha" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Security Challenge</label>
+                        <div class="bg-slate-50 dark:bg-slate-900/80 rounded-2xl p-4 border-2 border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-xl">
+                                    <ShieldCheck class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                {#if captcha}
+                                    <span class="font-black text-lg text-slate-700 dark:text-slate-200 tracking-wider font-mono" in:fade>{captcha.challenge}</span>
+                                {:else}
+                                    <div class="h-6 w-20 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-lg"></div>
+                                {/if}
+                            </div>
+                            <button 
+                                type="button" 
+                                onclick={fetchCaptcha}
+                                class="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all text-slate-400 hover:text-indigo-600"
+                                aria-label="Refresh Captcha"
+                            >
+                                <RefreshCw class="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div class="relative group">
+                            <input 
+                                id="captcha" 
+                                bind:value={captchaAnswer} 
+                                type="text" 
+                                required 
+                                placeholder="Enter result"
+                                class="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-[22px] focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500/50 transition-all outline-none text-slate-700 dark:text-slate-200 font-bold text-sm text-center" 
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <button 
                     type="submit" 
-                    disabled={loading} 
+                    disabled={loading || !captchaAnswer} 
                     class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-[22px] py-4 shadow-xl shadow-indigo-100 dark:shadow-none transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center space-x-2 text-lg tracking-tight group"
                 >
                     {#if loading}

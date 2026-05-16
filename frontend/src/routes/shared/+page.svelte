@@ -10,6 +10,6 @@
     <Header onSearch={(q: string) => explorer?.handleSearch(q)} />
     <div class="flex-1 flex overflow-hidden">
         <Sidebar activeView="shared" />
-        <FileExplorer bind:this={explorer} title="Shared with me" />
+        <FileExplorer bind:this={explorer} title="Shared with me" sharedWithMe={true} />
     </div>
 </div>

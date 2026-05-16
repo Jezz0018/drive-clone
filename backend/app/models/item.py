@@ -25,9 +25,16 @@ class Item(Base):
     is_starred = Column(Boolean, default=False)
     is_trashed = Column(Boolean, default=False)
     trashed_at = Column(DateTime, nullable=True)
+    is_archived = Column(Boolean, default=False)
+    category = Column(String, nullable=True) # e.g., 'personal', 'work', 'project'
+    
+    # Sharing
+    is_public = Column(Boolean, default=False)
+    sharing_token = Column(String, unique=True, index=True, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="items")
     parent = relationship("Item", remote_side=[id], backref="children")
+    permissions = relationship("ItemPermission", back_populates="item", cascade="all, delete-orphan")
