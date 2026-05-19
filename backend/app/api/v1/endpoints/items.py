@@ -26,13 +26,33 @@ async def get_storage_usage(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)
 ) -> Any:
-    # Sum size of all files owned by user
+    # Fetch all files owned by user to sum them manually (more robust for debugging)
     result = await db.execute(
-        select(func.sum(Item.size))
+        select(Item.size, Item.category)
         .filter(Item.owner_id == current_user.id, Item.is_folder == False)
     )
-    total_used = result.scalar() or 0
-    return {"used": total_used, "limit": 10 * 1024 * 1024 * 1024} # 10GB limit
+    rows = result.all()
+    
+    total_used = 0
+    breakdown_map = {}
+    file_count = len(rows)
+    
+    for size, category in rows:
+        item_size = size or 0
+        total_used += item_size
+        cat_name = category or "Uncategorized"
+        breakdown_map[cat_name] = breakdown_map.get(cat_name, 0) + item_size
+
+    breakdown = []
+    for name, size in breakdown_map.items():
+        breakdown.append({"name": name, "size": size})
+
+    return {
+        "used": total_used, 
+        "limit": 10 * 1024 * 1024 * 1024, # 10GB limit
+        "breakdown": breakdown,
+        "file_count": file_count
+    }
 
 @router.get("/share/{token}")
 async def get_shared_item(
@@ -214,7 +234,9 @@ async def read_items(
     category_id: Optional[uuid.UUID] = None,
     search: Optional[str] = None,
     mime_type: Optional[str] = None,
-    shared_with_me: bool = False
+    shared_with_me: bool = False,
+    sort_by: str = "name",
+    sort_order: str = "asc"
 ) -> Any:
     if shared_with_me:
         # Items shared with current user
@@ -251,7 +273,16 @@ async def read_items(
     if search:
         query = query.filter(Item.name.ilike(f"%{search}%"))
         
-    query = query.order_by(Item.is_folder.desc(), Item.name.asc())
+    # Sort Logic
+    order_func = Item.name.asc()
+    if sort_by == "size":
+        order_func = Item.size.asc() if sort_order == "asc" else Item.size.desc()
+    elif sort_by == "date":
+        order_func = Item.updated_at.asc() if sort_order == "asc" else Item.updated_at.desc()
+    else: # name
+        order_func = Item.name.asc() if sort_order == "asc" else Item.name.desc()
+
+    query = query.order_by(Item.is_folder.desc(), order_func)
     
     result = await db.execute(query)
     return result.scalars().all()

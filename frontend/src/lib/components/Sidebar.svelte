@@ -40,7 +40,7 @@
 
     async function fetchStorageUsage() {
         try {
-            const response = await api.get('/items/storage/usage');
+            const response = await api.get(`/items/storage/usage?t=${Date.now()}`);
             storageUsage.set(response.data);
         } catch (e) {
             // Silently fail
@@ -72,7 +72,7 @@
     ];
 </script>
 
-<aside class="w-80 bg-white dark:bg-slate-900 h-screen flex flex-col border-r border-slate-200/50 dark:border-slate-800/50 z-30 transition-colors duration-300 overflow-hidden">
+<aside class="w-80 bg-slate-100 dark:bg-slate-900 h-screen flex flex-col border-r border-slate-200/50 dark:border-slate-800/50 z-30 transition-colors duration-300 overflow-hidden">
     <!-- Navigation Wrapper -->
     <div class="flex-1 overflow-y-auto custom-scrollbar">
         <nav class="px-4 py-8 space-y-8">
@@ -89,11 +89,10 @@
                             class={cn(
                                 "flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group relative",
                                 activeView === item.id 
-                                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" 
-                                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
+                                    ? "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" 
+                                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
                             )}
-                        >
-                            <div class="flex items-center space-x-3">
+                        >                            <div class="flex items-center space-x-3">
                                 <Icon class={cn("w-5 h-5 transition-colors stroke-[2px]", activeView === item.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300")} />
                                 <span class="font-bold text-sm tracking-tight">{item.label}</span>
                             </div>
@@ -121,8 +120,8 @@
                         <a 
                             href={`/category/${cat.name.toLowerCase()}`}
                             class={cn(
-                                "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group text-left",
-                                activeView === `cat-${cat.name.toLowerCase()}` && "bg-indigo-50 dark:bg-indigo-900/20"
+                                "w-full flex items-center justify-between px-4 py-3 hover:bg-slate-200 dark:hover:bg-slate-800/50 rounded-2xl transition-all group text-left",
+                                activeView === `cat-${cat.name.toLowerCase()}` && "bg-indigo-100 dark:bg-indigo-900/20"
                             )}
                         >
                             <div class="flex items-center space-x-3">
@@ -138,11 +137,11 @@
             </div>
 
             <!-- Storage Section (Now inside the scrollable container) -->
-            <div class="pt-8 border-t border-slate-100 dark:border-slate-800">
+            <div class="pt-8 border-t border-slate-200 dark:border-slate-800">
                 <div class="mb-4 px-4">
                     <span class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Storage Usage</span>
                 </div>
-                <div class="mx-2 bg-slate-50 dark:bg-slate-800/40 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div class="mx-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center space-x-2">
                             <div class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none">

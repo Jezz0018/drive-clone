@@ -22,9 +22,10 @@
 @layer base {
   :root {
     color-scheme: light;
-    --bg-main: #f8fafc;
-    --surface-main: #ffffff;
-    --text-main: #0f172a;
+    --bg-main: #f1f5f9; /* slate-100 */
+    --surface-main: #f8fafc; /* slate-50 */
+    --text-main: #0f172a; /* slate-900 */
+    --border-main: #e2e8f0; /* slate-200 */
   }
   
   :root.dark {
@@ -32,6 +33,7 @@
     --bg-main: #020617;
     --surface-main: #0f172a;
     --text-main: #f8fafc;
+    --border-main: #1e293b;
   }
 
   html, body {

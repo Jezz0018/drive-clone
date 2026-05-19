@@ -4,9 +4,45 @@
     import { user, token } from '$lib/stores';
     import { User, Mail, Phone, Calendar, ShieldCheck, LogOut, Settings as SettingsIcon, ChevronRight } from 'lucide-svelte';
     import { fly, fade } from 'svelte/transition';
+    import { quintOut } from 'svelte/easing';
     import { cn } from '$lib/utils';
     import { goto } from '$app/navigation';
     import { toasts } from '$lib/toasts';
+    import api from '$lib/api';
+
+    let showPasswordModal = $state(false);
+    let oldPassword = $state('');
+    let newPassword = $state('');
+    let confirmPassword = $state('');
+    let updating = $state(false);
+
+    async function handleUpdatePassword() {
+        if (newPassword !== confirmPassword) {
+            toasts.error('Passwords do not match');
+            return;
+        }
+        if (newPassword.length < 8) {
+            toasts.error('Password must be at least 8 characters');
+            return;
+        }
+
+        updating = true;
+        try {
+            await api.post('/auth/change-password', {
+                old_password: oldPassword,
+                new_password: newPassword
+            });
+            toasts.success('Password updated successfully');
+            showPasswordModal = false;
+            oldPassword = '';
+            newPassword = '';
+            confirmPassword = '';
+        } catch (e: any) {
+            toasts.error(e.response?.data?.detail || 'Failed to update password');
+        } finally {
+            updating = false;
+        }
+    }
 
     function handleLogout() {
         token.set(null);
@@ -30,8 +66,8 @@
                 <!-- Page Header -->
                 <div>
                     <div class="flex items-center space-x-2 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
-                        <SettingsIcon class="w-3 h-3" />
-                        <span>System Preferences</span>
+                        <User class="w-3.5 h-3.5" />
+                        <span>Identity Hub</span>
                     </div>
                     <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">Profile Settings</h1>
                 </div>
@@ -102,27 +138,28 @@
                                 </div>
                             </div>
 
-                            <!-- Security Section -->
+                            <!-- Quick Actions Section -->
                             <div class="space-y-6">
-                                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">Security Status</h3>
+                                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">Quick Actions</h3>
                                 
-                                <div class="p-6 rounded-[32px] bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 flex items-start space-x-4">
-                                    <div class="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600">
-                                        <ShieldCheck class="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p class="font-black text-emerald-700 dark:text-emerald-400 text-sm tracking-tight">Identity Verified</p>
-                                        <p class="text-xs text-emerald-600/80 dark:text-emerald-500/60 font-medium mt-1 leading-relaxed">Your account is secured with email OTP verification and math-challenge captcha.</p>
-                                    </div>
-                                </div>
-
                                 <button 
                                     class="w-full flex items-center justify-between p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 transition-all group"
-                                    onclick={() => toasts.info('Feature locked in demo mode')}
+                                    onclick={() => showPasswordModal = true}
                                 >
                                     <div class="flex items-center space-x-3">
                                         <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
                                         <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Change Password</span>
+                                    </div>
+                                    <ChevronRight class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                </button>
+
+                                <button 
+                                    class="w-full flex items-center justify-between p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 transition-all group"
+                                    onclick={() => goto('/security')}
+                                >
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Security Protocols</span>
                                     </div>
                                     <ChevronRight class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                                 </button>
@@ -150,6 +187,72 @@
         </main>
     </div>
 </div>
+
+<!-- Password Change Modal -->
+{#if showPasswordModal}
+    <div 
+        class="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-md flex items-center justify-center z-[70] p-6"
+        transition:fade={{ duration: 200 }}
+    >
+        <div 
+            class="bg-white dark:bg-slate-900 rounded-[48px] p-10 w-full max-w-md shadow-2xl border border-white/20 dark:border-slate-800 relative overflow-hidden"
+            transition:fly={{ y: 40, duration: 400, easing: quintOut }}
+        >
+            <div class="mb-8">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Security Update</h2>
+                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Update your account credentials</p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Current Password</label>
+                    <input 
+                        bind:value={oldPassword} 
+                        type="password" 
+                        placeholder="••••••••" 
+                        class="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-[22px] px-6 py-4 text-sm font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500/30 transition-all outline-none text-slate-900 dark:text-slate-100" 
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">New Password</label>
+                    <input 
+                        bind:value={newPassword} 
+                        type="password" 
+                        placeholder="••••••••" 
+                        class="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-[22px] px-6 py-4 text-sm font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500/30 transition-all outline-none text-slate-900 dark:text-slate-100" 
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Confirm New Password</label>
+                    <input 
+                        bind:value={confirmPassword} 
+                        type="password" 
+                        placeholder="••••••••" 
+                        class="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent rounded-[22px] px-6 py-4 text-sm font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500/30 transition-all outline-none text-slate-900 dark:text-slate-100" 
+                    />
+                </div>
+
+                <div class="flex items-center space-x-3 pt-2">
+                    <button 
+                        onclick={() => showPasswordModal = false}
+                        class="flex-1 px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-[22px] hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onclick={handleUpdatePassword}
+                        disabled={updating || !oldPassword || !newPassword || !confirmPassword}
+                        class="flex-[2] px-6 py-4 bg-indigo-600 text-white font-bold rounded-[22px] hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none disabled:opacity-50"
+                    >
+                        {updating ? 'Updating...' : 'Update Password'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
     @reference "tailwindcss";

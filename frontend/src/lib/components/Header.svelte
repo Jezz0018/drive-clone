@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Search as SearchIcon } from 'lucide-svelte';
+    import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Search as SearchIcon, Database, ShieldCheck, HelpCircle, UserPlus } from 'lucide-svelte';
     import { token, user } from '$lib/stores';
     import { goto } from '$app/navigation';
     import { cn } from '$lib/utils';
@@ -9,7 +9,8 @@
 
     let { viewMode = $bindable('list'), onSearch = (query: string) => {} } = $props();
 
-    let showSettings = $state(false);
+    let showProfileMenu = $state(false);
+    let showSettingsMenu = $state(false);
     let showNotifications = $state(false);
 
     function logout() {
@@ -17,7 +18,15 @@
         user.set(null);
         goto('/login');
     }
+
+    function closeAllMenus() {
+        showProfileMenu = false;
+        showSettingsMenu = false;
+        showNotifications = false;
+    }
 </script>
+
+<svelte:window onclick={closeAllMenus} />
 
 <header class="h-20 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl sticky top-0 z-40 transition-colors duration-300">
     <!-- Branding -->
@@ -71,10 +80,77 @@
                 <div in:fade><Sun class="w-5 h-5" /></div>
             {/if}
         </button>
+
+        <!-- Settings Dropdown -->
+        <div class="relative">
+            <button 
+                onclick={(e) => {
+                    e.stopPropagation();
+                    showSettingsMenu = !showSettingsMenu;
+                    showNotifications = false;
+                    showProfileMenu = false;
+                }}
+                class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all relative"
+                title="Global Settings"
+            >
+                <Settings class="w-5 h-5" />
+            </button>
+
+            {#if showSettingsMenu}
+                <div 
+                    class="absolute right-0 mt-4 w-72 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-2 z-50"
+                    transition:slide
+                    onclick={(e) => e.stopPropagation()}
+                >
+                    <div class="px-4 py-3 mb-2 border-b border-slate-50 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Control</p>
+                    </div>
+                    
+                    <button 
+                        onclick={() => { showSettingsMenu = false; goto('/profile'); }}
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
+                    >
+                        <User class="w-4 h-4 text-indigo-500" />
+                        <span>Profile Settings</span>
+                    </button>
+
+                    <button 
+                        onclick={() => { showSettingsMenu = false; goto('/storage'); }}
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
+                    >
+                        <Database class="w-4 h-4 text-amber-500" />
+                        <span>Storage Settings</span>
+                    </button>
+
+                    <button 
+                        onclick={() => { showSettingsMenu = false; goto('/security'); }}
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
+                    >
+                        <ShieldCheck class="w-4 h-4 text-emerald-500" />
+                        <span>Security & Privacy</span>
+                    </button>
+
+                    <div class="h-px bg-slate-50 dark:bg-slate-700 my-2 mx-4"></div>
+
+                    <button 
+                        onclick={() => { showSettingsMenu = false; toasts.info('System manual initializing...'); }}
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
+                    >
+                        <HelpCircle class="w-4 h-4 text-slate-400" />
+                        <span>Help & Documentation</span>
+                    </button>
+                </div>
+            {/if}
+        </div>
         
         <div class="relative">
             <button 
-                onclick={() => showNotifications = !showNotifications}
+                onclick={(e) => {
+                    e.stopPropagation();
+                    showNotifications = !showNotifications;
+                    showSettingsMenu = false;
+                    showProfileMenu = false;
+                }}
                 class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all relative"
             >
                 <Bell class="w-5 h-5" />
@@ -85,6 +161,7 @@
                 <div 
                     class="absolute right-0 mt-4 w-80 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-4 animate-in fade-in slide-in-from-top-2 z-50"
                     transition:slide
+                    onclick={(e) => e.stopPropagation()}
                 >
                     <h3 class="font-bold text-slate-800 dark:text-white mb-3">Notifications</h3>
                     <div class="space-y-3">
@@ -107,10 +184,15 @@
         <!-- Profile -->
         <div class="relative">
             <button 
-                onclick={() => showSettings = !showSettings}
+                onclick={(e) => {
+                    e.stopPropagation();
+                    showProfileMenu = !showProfileMenu;
+                    showNotifications = false;
+                    showSettingsMenu = false;
+                }}
                 class={cn(
                     "flex items-center space-x-2 p-1.5 pl-1.5 pr-4 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-[20px] transition-all border border-transparent",
-                    showSettings && "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                    showProfileMenu && "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                 )}
             >
                 <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-black shadow-md shadow-indigo-100 dark:shadow-none">
@@ -122,36 +204,33 @@
                 </div>
             </button>
 
-            {#if showSettings}
+            {#if showProfileMenu}
                 <div 
                     class="absolute right-0 mt-4 w-64 bg-white dark:bg-slate-800 rounded-[28px] shadow-2xl border border-slate-100 dark:border-slate-700 p-2 z-50"
                     transition:slide
+                    onclick={(e) => e.stopPropagation()}
                 >
                     <div class="px-4 py-3 mb-2">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Personal Account</p>
                         <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{$user?.email || 'Unknown Email'}</p>
                     </div>
+
                     <button 
-                        onclick={() => { showSettings = false; goto('/profile'); }}
+                        onclick={() => { showProfileMenu = false; toasts.info('Multi-account support coming soon'); }}
                         class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
                     >
-                        <User class="w-4 h-4" />
-                        <span>Profile Settings</span>
+                        <UserPlus class="w-4 h-4 text-indigo-500" />
+                        <span>Add another account</span>
                     </button>
-                    <button 
-                        onclick={() => toasts.info('Security & Privacy settings coming soon')}
-                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
-                    >
-                        <Settings class="w-4 h-4" />
-                        <span>Security & Privacy</span>
-                    </button>
-                    <div class="h-px bg-slate-100 dark:bg-slate-700 my-2 mx-4"></div>
+
+                    <div class="h-px bg-slate-50 dark:bg-slate-700 my-2 mx-4"></div>
+
                     <button 
                         onclick={logout}
                         class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl text-sm font-bold text-rose-600 dark:text-rose-400 transition-colors"
                     >
                         <LogOut class="w-4 h-4" />
-                        <span>Secure Sign Out</span>
+                        <span>Sign Out</span>
                     </button>
                 </div>
             {/if}

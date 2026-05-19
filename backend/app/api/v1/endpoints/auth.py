@@ -148,3 +148,18 @@ async def read_user_me(
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
     return current_user
+
+@router.post("/change-password")
+async def change_password(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    password_in: user_schema.PasswordChange,
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    if not security.verify_password(password_in.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect old password")
+    
+    current_user.hashed_password = security.get_password_hash(password_in.new_password)
+    db.add(current_user)
+    await db.commit()
+    return {"message": "Password updated successfully"}

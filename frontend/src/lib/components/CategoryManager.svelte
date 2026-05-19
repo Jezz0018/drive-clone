@@ -61,10 +61,12 @@
 <div 
     class="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-md flex items-center justify-center z-[70] p-6"
     transition:fade={{ duration: 200 }}
+    onclick={onclose}
 >
     <div 
         class="bg-white dark:bg-slate-900 rounded-[40px] p-8 w-full max-w-md shadow-2xl border border-white/20 dark:border-slate-800 relative overflow-hidden"
         transition:fly={{ y: 40, duration: 400, easing: quintOut }}
+        onclick={(e) => e.stopPropagation()}
     >
         <div class="flex items-center justify-between mb-8">
             <div class="flex items-center space-x-4">

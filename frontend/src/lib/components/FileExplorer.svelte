@@ -15,6 +15,7 @@
         Share2,
         Info,
         ChevronRight,
+        ChevronDown,
         Search,
         LayoutGrid,
         LayoutList,
@@ -23,6 +24,12 @@
         X,
         History,
         ArrowLeft,
+        ArrowUp,
+        ArrowDown,
+        ArrowUpDown,
+        Type,
+        Calendar,
+        HardDrive,
         ExternalLink,
         FileText,
         Image as ImageIcon,
@@ -79,6 +86,10 @@
     let loading = $state(true);
     let viewMode = $state<'list' | 'grid'>('grid');
     let searchQuery = $state('');
+    let sortKey = $state<'name' | 'size' | 'date'>('name');
+    let sortOrder = $state<'asc' | 'desc'>('asc');
+    let showSortMenu = $state(false);
+    let showCreateMenu = $state(false);
     let currentFolderId = $state<string | null>(null);
     let breadcrumbs = $state<{id: string | null, name: string}[]>([{id: null, name: 'Root'}]);
     
@@ -116,6 +127,12 @@
         e.stopPropagation();
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         contextMenu = { x: rect.left - 200, y: rect.bottom + 10, item };
+    }
+
+    function closeAllMenus() {
+        showSortMenu = false;
+        showCreateMenu = false;
+        contextMenu = null;
     }
 
     async function handleAction(action: string, data?: any) {
@@ -190,7 +207,9 @@
                 is_trashed: isTrashed,
                 is_archived: isArchived,
                 category: category || undefined,
-                shared_with_me: sharedWithMe
+                shared_with_me: sharedWithMe,
+                sort_by: sortKey,
+                sort_order: sortOrder
             };
             const response = await api.get('/items/', { params });
             items = Array.isArray(response.data) ? response.data : [];
@@ -366,8 +385,10 @@
     }
 </script>
 
+<svelte:window onclick={closeAllMenus} />
+
 <div 
-    class="flex-1 flex flex-col bg-slate-50 dark:bg-[#0f172a] overflow-hidden relative transition-colors duration-300"
+    class="flex-1 flex flex-col bg-slate-100 dark:bg-[#0f172a] overflow-hidden relative transition-colors duration-300"
     ondragover={(e) => { e.preventDefault(); isDragging = true; }}
     ondragleave={() => isDragging = false}
     ondrop={handleDrop}
@@ -408,50 +429,179 @@
             </div>
         </div>
 
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3">
+            <!-- Sort Switcher -->
+            <div class="relative">
+                <button 
+                    onclick={(e) => { e.stopPropagation(); showSortMenu = !showSortMenu; showCreateMenu = false; }}
+                    class={cn(
+                        "flex items-center space-x-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-[14px] px-3 py-1.5 shadow-sm transition-all font-bold text-[11px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700",
+                        showSortMenu && "border-indigo-500 ring-2 ring-indigo-500/10"
+                    )}
+                >
+                    <ArrowUpDown class="w-3 h-3" />
+                    <span>Sort</span>
+                </button>
+
+                {#if showSortMenu}
+                    <div 
+                        class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                        transition:scale={{ duration: 150, start: 0.95 }}
+                        onmouseleave={() => showSortMenu = false}
+                        onclick={(e) => e.stopPropagation()}
+                    >
+                        <!-- Name Sorting -->
+                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                            <div class="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <Type class="w-3 h-3" />
+                                <span>Name</span>
+                            </div>
+                        </div>
+                        <button 
+                            onclick={() => { sortKey = 'name'; sortOrder = 'asc'; fetchItems(); showSortMenu = false; }}
+                            class={cn(
+                                "w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group",
+                                (sortKey === 'name' && sortOrder === 'asc') ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            )}
+                        >
+                            <span class="text-xs font-bold">Alphabetical (A to Z)</span>
+                            {#if sortKey === 'name' && sortOrder === 'asc'}<ArrowUp class="w-3 h-3" />{/if}
+                        </button>
+                        <button 
+                            onclick={() => { sortKey = 'name'; sortOrder = 'desc'; fetchItems(); showSortMenu = false; }}
+                            class={cn(
+                                "w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group mb-2",
+                                (sortKey === 'name' && sortOrder === 'desc') ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            )}
+                        >
+                            <span class="text-xs font-bold">Alphabetical (Z to A)</span>
+                            {#if sortKey === 'name' && sortOrder === 'desc'}<ArrowDown class="w-3 h-3" />{/if}
+                        </button>
+
+                        <!-- Date Sorting -->
+                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                            <div class="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <Calendar class="w-3 h-3" />
+                                <span>Modification Date</span>
+                            </div>
+                        </div>
+                        <button 
+                            onclick={() => { sortKey = 'date'; sortOrder = 'desc'; fetchItems(); showSortMenu = false; }}
+                            class={cn(
+                                "w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group",
+                                (sortKey === 'date' && sortOrder === 'desc') ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            )}
+                        >
+                            <span class="text-xs font-bold">Newest First</span>
+                            {#if sortKey === 'date' && sortOrder === 'desc'}<ArrowDown class="w-3 h-3" />{/if}
+                        </button>
+                        <button 
+                            onclick={() => { sortKey = 'date'; sortOrder = 'asc'; fetchItems(); showSortMenu = false; }}
+                            class={cn(
+                                "w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group mb-2",
+                                (sortKey === 'date' && sortOrder === 'asc') ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            )}
+                        >
+                            <span class="text-xs font-bold">Oldest First</span>
+                            {#if sortKey === 'date' && sortOrder === 'asc'}<ArrowUp class="w-3 h-3" />{/if}
+                        </button>
+
+                        <!-- Size Sorting -->
+                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                            <div class="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <HardDrive class="w-3 h-3" />
+                                <span>File Size</span>
+                            </div>
+                        </div>
+                        <button 
+                            onclick={() => { sortKey = 'size'; sortOrder = 'desc'; fetchItems(); showSortMenu = false; }}
+                            class={cn(
+                                "w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group",
+                                (sortKey === 'size' && sortOrder === 'desc') ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            )}
+                        >
+                            <span class="text-xs font-bold">Largest First</span>
+                            {#if sortKey === 'size' && sortOrder === 'desc'}<ArrowDown class="w-3 h-3" />{/if}
+                        </button>
+                        <button 
+                            onclick={() => { sortKey = 'size'; sortOrder = 'asc'; fetchItems(); showSortMenu = false; }}
+                            class={cn(
+                                "w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group",
+                                (sortKey === 'size' && sortOrder === 'asc') ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            )}
+                        >
+                            <span class="text-xs font-bold">Smallest First</span>
+                            {#if sortKey === 'size' && sortOrder === 'asc'}<ArrowUp class="w-3 h-3" />{/if}
+                        </button>
+                    </div>
+                {/if}
+            </div>
+
             <!-- View Mode Switcher -->
-            <div class="flex bg-white dark:bg-slate-800 p-1.5 rounded-[18px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+            <div class="flex bg-white dark:bg-slate-800 p-1 rounded-[14px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
                 <button 
                     onclick={() => viewMode = 'list'}
                     class={cn(
-                        "p-2 rounded-xl transition-all flex items-center space-x-2 px-3", 
+                        "p-1.5 rounded-lg transition-all flex items-center space-x-1.5 px-2.5", 
                         viewMode === 'list' 
                             ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 shadow-inner" 
                             : "text-slate-400 dark:text-slate-500 hover:text-slate-600"
                     )}
                 >
-                    <LayoutList class="w-4 h-4" />
-                    <span class="text-xs font-black uppercase tracking-widest hidden lg:block">List</span>
+                    <LayoutList class="w-3.5 h-3.5" />
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden lg:block">List</span>
                 </button>
                 <button 
                     onclick={() => viewMode = 'grid'}
                     class={cn(
-                        "p-2 rounded-xl transition-all flex items-center space-x-2 px-3", 
+                        "p-1.5 rounded-lg transition-all flex items-center space-x-1.5 px-2.5", 
                         viewMode === 'grid' 
                             ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 shadow-inner" 
                             : "text-slate-400 dark:text-slate-500 hover:text-slate-600"
                     )}
                 >
-                    <LayoutGrid class="w-4 h-4" />
-                    <span class="text-xs font-black uppercase tracking-widest hidden lg:block">Grid</span>
+                    <LayoutGrid class="w-3.5 h-3.5" />
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden lg:block">Grid</span>
                 </button>
             </div>
             
-            <div class="flex items-center space-x-3">
+            <!-- Create New Switcher -->
+            <div class="relative">
                 <button 
-                    onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = 'New Folder'; }}
-                    class="flex items-center space-x-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm"
+                    onclick={(e) => { e.stopPropagation(); showCreateMenu = !showCreateMenu; showSortMenu = false; }}
+                    class={cn(
+                        "flex items-center justify-center space-x-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[24px] px-10 py-4 shadow-2xl shadow-indigo-500/30 dark:shadow-none transition-all active:scale-[0.98] font-bold uppercase tracking-widest",
+                        showCreateMenu && "ring-4 ring-indigo-500/10"
+                    )}
                 >
-                    <FolderPlus class="w-4 h-4" />
-                    <span>New Folder</span>
+                    <Plus class="w-5 h-5 stroke-[3px]" />
+                    <span class="text-sm">Create New</span>
+                    <ChevronDown class="w-4 h-4 ml-1 opacity-70" />
                 </button>
-                <button 
-                    onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = ''; }}
-                    class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5 py-2.5 shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 font-bold text-sm"
-                >
-                    <Plus class="w-4 h-4 stroke-[3px]" />
-                    <span>Upload File</span>
-                </button>
+
+                {#if showCreateMenu}
+                    <div 
+                        class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                        transition:scale={{ duration: 150, start: 0.95 }}
+                        onmouseleave={() => showCreateMenu = false}
+                        onclick={(e) => e.stopPropagation()}
+                    >
+                        <button 
+                            onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = 'New Folder'; showCreateMenu = false; }}
+                            class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                        >
+                            <FolderPlus class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                            <span class="text-xs font-bold">New Folder</span>
+                        </button>
+                        <button 
+                            onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = ''; showCreateMenu = false; }}
+                            class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                        >
+                            <UploadCloud class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                            <span class="text-xs font-bold">Upload File</span>
+                        </button>
+                    </div>
+                {/if}
             </div>
         </div>
     </div>
