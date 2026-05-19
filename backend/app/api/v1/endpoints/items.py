@@ -16,7 +16,23 @@ import secrets
 
 from fastapi.responses import FileResponse
 
+from sqlalchemy import select, and_, or_, func
+
 router = APIRouter()
+
+@router.get("/storage/usage")
+async def get_storage_usage(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    # Sum size of all files owned by user
+    result = await db.execute(
+        select(func.sum(Item.size))
+        .filter(Item.owner_id == current_user.id, Item.is_folder == False)
+    )
+    total_used = result.scalar() or 0
+    return {"used": total_used, "limit": 10 * 1024 * 1024 * 1024} # 10GB limit
 
 @router.get("/share/{token}")
 async def get_shared_item(
@@ -197,6 +213,7 @@ async def read_items(
     category: Optional[str] = None,
     category_id: Optional[uuid.UUID] = None,
     search: Optional[str] = None,
+    mime_type: Optional[str] = None,
     shared_with_me: bool = False
 ) -> Any:
     if shared_with_me:
@@ -336,7 +353,11 @@ async def delete_item(
     current_user: User = Depends(deps.get_current_user),
     item_id: uuid.UUID
 ) -> Any:
-    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    result = await db.execute(
+        select(Item)
+        .options(selectinload(Item.permissions), selectinload(Item.category_obj))
+        .filter(Item.id == item_id, Item.owner_id == current_user.id)
+    )
     db_obj = result.scalars().first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Item not found")

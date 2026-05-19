@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import api, { BASE_URL } from '$lib/api';
+    import { storageUsage } from '$lib/stores';
     import { 
         Folder, 
         Star, 
@@ -10,6 +11,7 @@
         Plus,
         Upload,
         MoreHorizontal,
+        MoreVertical,
         Share2,
         Info,
         ChevronRight,
@@ -34,6 +36,7 @@
     import { quintOut } from 'svelte/easing';
     import { toasts } from '$lib/toasts';
     import ShareModal from './ShareModal.svelte';
+    import ContextMenu from './ContextMenu.svelte';
 
     interface Item {
         id: string;
@@ -59,7 +62,8 @@
         isRecent = false,
         isArchived = false,
         category = undefined,
-        sharedWithMe = false
+        sharedWithMe = false,
+        mimeType = undefined
     } = $props<{
         title?: string;
         isStarred?: boolean;
@@ -68,6 +72,7 @@
         isArchived?: boolean;
         category?: string;
         sharedWithMe?: boolean;
+        mimeType?: string;
     }>();
 
     let items = $state<Item[]>([]);
@@ -87,6 +92,85 @@
     let sharingItem = $state<Item | null>(null);
     let customCategories = $state<any[]>([]);
 
+    let showMoveModal = $state(false);
+    let moveTargetItem = $state<Item | null>(null);
+    let allFolders = $state<Item[]>([]);
+    let selectedDestinationId = $state<string | null>(null);
+
+    // Context Menu State
+    let contextMenu = $state<{ x: number, y: number, item: Item } | null>(null);
+
+    async function handleContextMenu(e: MouseEvent, item: Item) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Adjust position if too close to edges
+        const x = Math.min(e.clientX, window.innerWidth - 250);
+        const y = Math.min(e.clientY, window.innerHeight - 450);
+        
+        contextMenu = { x, y, item };
+    }
+
+    function openThreeDotsMenu(e: MouseEvent, item: Item) {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        contextMenu = { x: rect.left - 200, y: rect.bottom + 10, item };
+    }
+
+    async function handleAction(action: string, data?: any) {
+        if (!contextMenu) return;
+        const item = contextMenu.item;
+        
+        // Close menu first to ensure responsiveness
+        contextMenu = null;
+        
+        switch(action) {
+            case 'star': await toggleStar(item); break;
+            case 'archive': await toggleArchive(item); break;
+            case 'share': openShareModal(item); break;
+            case 'download': downloadFile(item); break;
+            case 'trash': await moveToTrash(item); break;
+            case 'restore': await restoreItem(item); break;
+            case 'category': await changeCategory(item, data.name, data.id); break;
+            case 'details': 
+                toasts.info(`File details for ${item.name} coming soon`);
+                break;
+            case 'move': 
+                moveTargetItem = item;
+                await fetchAllFolders();
+                showMoveModal = true;
+                break;
+        }
+    }
+
+    async function fetchAllFolders() {
+        try {
+            const response = await api.get('/items/', { params: { is_folder: true } });
+            allFolders = response.data.filter((f: Item) => f.id !== moveTargetItem?.id);
+        } catch (e) {}
+    }
+
+    async function fetchStorageUsage() {
+        try {
+            const response = await api.get('/items/storage/usage');
+            storageUsage.set(response.data);
+        } catch (e) {}
+    }
+
+    async function confirmMove() {
+        if (!moveTargetItem) return;
+        try {
+            await api.patch(`/items/${moveTargetItem.id}/`, { parent_id: selectedDestinationId });
+            toasts.success(`Moved ${moveTargetItem.name} successfully`);
+            showMoveModal = false;
+            fetchItems();
+            fetchStorageUsage();
+        } catch (e) {
+            toasts.error('Failed to move item.');
+        }
+    }
+
     async function fetchCustomCategories() {
         try {
             const response = await api.get('/categories/');
@@ -100,7 +184,7 @@
         loading = true;
         try {
             const params = {
-                parent_id: currentFolderId,
+                parent_id: currentFolderId || undefined,
                 search: searchQuery || undefined,
                 is_starred: isStarred,
                 is_trashed: isTrashed,
@@ -109,9 +193,11 @@
                 shared_with_me: sharedWithMe
             };
             const response = await api.get('/items/', { params });
-            items = response.data;
+            items = Array.isArray(response.data) ? response.data : [];
         } catch (e) {
+            console.error('Fetch error:', e);
             toasts.error('Failed to sync with drive.');
+            items = [];
         } finally {
             loading = false;
         }
@@ -120,6 +206,7 @@
     onMount(() => {
         fetchItems();
         fetchCustomCategories();
+        fetchStorageUsage();
     });
 
     export function handleSearch(query: string) {
@@ -184,8 +271,22 @@
             await api.delete(`/items/${item.id}/`);
             items = items.filter(i => i.id !== item.id);
             toasts.success(isTrashed ? 'Permanently deleted' : 'Moved to trash');
-        } catch (e) {
-            toasts.error('Action failed.');
+            fetchStorageUsage();
+        } catch (e: any) {
+            console.error('Delete error:', e);
+            toasts.error(e.response?.data?.detail || 'Action failed.');
+        }
+    }
+
+    async function restoreItem(item: Item) {
+        try {
+            await api.patch(`/items/${item.id}/`, { is_trashed: false });
+            items = items.filter(i => i.id !== item.id);
+            toasts.success('Item restored successfully');
+            fetchStorageUsage();
+        } catch (e: any) {
+            console.error('Restore error:', e);
+            toasts.error(e.response?.data?.detail || 'Failed to restore item.');
         }
     }
 
@@ -241,6 +342,7 @@
             fileToUpload = null;
             showUploadModal = false;
             fetchItems();
+            fetchStorageUsage();
             toasts.success('File uploaded to drive.');
         } catch (e) {
             toasts.error('Upload failed.');
@@ -286,10 +388,6 @@
     <!-- Toolbar / Breadcrumbs -->
     <div class="flex flex-col md:flex-row md:items-center justify-between px-8 py-8 gap-4">
         <div>
-            <div class="flex items-center space-x-2 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
-                <History class="w-3 h-3" />
-                <span>Path Explorer</span>
-            </div>
             <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar">
                 {#each breadcrumbs as crumb, i}
                     <button 
@@ -301,7 +399,7 @@
                                 : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         )}
                     >
-                        {crumb.name}
+                        {crumb.name === 'Root' ? 'Main Menu' : crumb.name}
                     </button>
                     {#if i < breadcrumbs.length - 1}
                         <ChevronRight class="w-4 h-4 text-slate-300 dark:text-slate-700 shrink-0" />
@@ -421,11 +519,11 @@
                                                 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" 
                                                 : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
                                         )}>
-                                            <Icon class={cn("w-5 h-5", item.is_folder && "fill-current")} />
+                                            <svelte:component this={Icon} class={cn("w-5 h-5", item.is_folder && "fill-current")} />
                                         </div>
                                         <div class="flex flex-col min-w-0">
                                             {#if item.is_folder}
-                                                <button onclick={(e) => { e.stopPropagation(); openFolder(item); }} class="font-black text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm truncate tracking-tight">{item.name}</button>
+                                                <button onclick={(e) => { e.stopPropagation(); openFolder(item); }} class="font-black text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm truncate tracking-tight text-left">{item.name}</button>
                                             {:else}
                                                 <span class="font-black text-slate-900 dark:text-white text-sm truncate tracking-tight">{item.name}</span>
                                             {/if}
@@ -434,10 +532,7 @@
                                                     {item.is_folder ? 'Folder Container' : item.mime_type || 'Unclassified Data'}
                                                 </span>
                                                 {#if item.category}
-                                                    <span class={cn(
-                                                        "text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest",
-                                                        item.category === 'work' ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400" : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
-                                                    )}>
+                                                    <span class="text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
                                                         {item.category}
                                                     </span>
                                                 {/if}
@@ -452,37 +547,12 @@
                                     <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">{item.is_folder ? 'CONTAINER' : formatSize(item.size)}</span>
                                 </td>
                                 <td class="py-5 px-8 text-right">
-                                    <div class="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                                        <!-- Inline Category Options -->
-                                        <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category === 'work' ? "bg-indigo-100 text-indigo-600 shadow-inner" : "text-slate-400 hover:bg-indigo-50 hover:text-indigo-600")}>Work</button>
-                                        <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category === 'personal' ? "bg-emerald-100 text-emerald-600 shadow-inner" : "text-slate-400 hover:bg-emerald-50 hover:text-emerald-600")}>Personal</button>
-                                        
-                                        {#each customCategories as cat}
-                                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, cat.name, cat.id); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", item.category_id === cat.id ? "bg-indigo-100 text-indigo-600 shadow-inner" : "text-slate-400 hover:bg-indigo-50 hover:text-indigo-600")}>{cat.name}</button>
-                                        {/each}
-
-                                        <button onclick={(e) => { e.stopPropagation(); changeCategory(item, null, null); }} class={cn("p-2 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest", (item.category === null && !item.category_id) ? "bg-slate-100 text-slate-600 shadow-inner" : "text-slate-400 hover:bg-slate-100 hover:text-slate-600")}>None</button>
-                                        
-                                        <div class="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-
-                                        <button onclick={(e) => { e.stopPropagation(); toggleStar(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", item.is_starred ? "text-amber-500" : "text-slate-400")}>
-                                            <Star class={cn("w-4 h-4", item.is_starred && "fill-current")} />
-                                        </button>
-                                        <button onclick={(e) => { e.stopPropagation(); toggleArchive(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", item.is_archived ? "text-indigo-600" : "text-slate-400")}>
-                                            <ArchiveIcon class="w-4 h-4" />
-                                        </button>
-                                        <button onclick={(e) => { e.stopPropagation(); openShareModal(item); }} class={cn("p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700", (item.is_public || (item.permissions && item.permissions.length > 0)) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}>
-                                            <Share2 class="w-4 h-4" />
-                                        </button>
-                                        {#if !item.is_folder}
-                                            <button onclick={(e) => { e.stopPropagation(); downloadFile(item); }} class="p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
-                                                <Download class="w-4 h-4" />
-                                            </button>
-                                        {/if}
-                                        <button onclick={(e) => { e.stopPropagation(); moveToTrash(item); }} class="p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 text-slate-400 hover:text-rose-500">
-                                            <Trash class="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    <button 
+                                        onclick={(e) => openThreeDotsMenu(e, item)}
+                                        class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 transition-all"
+                                    >
+                                        <MoreHorizontal class="w-5 h-5" />
+                                    </button>
                                 </td>
                             </tr>
                         {/each}
@@ -503,40 +573,14 @@
                         onclick={() => selectedItemId = item.id}
                         in:scale={{ duration: 400, start: 0.9, easing: quintOut }}
                     >
-                        <!-- Category Badge -->
-                        {#if item.category}
-                            <div class="absolute top-6 left-6 z-20">
-                                <div class={cn(
-                                    "w-3 h-3 rounded-full shadow-sm ring-4 ring-white dark:ring-slate-800",
-                                    item.category === 'work' ? "bg-indigo-500" : "bg-emerald-500"
-                                )}></div>
-                            </div>
-                        {/if}
-
-                        <!-- Quick Actions Float -->
-                        <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 z-20 flex space-x-1">
-                            <button onclick={(e) => { e.stopPropagation(); toggleStar(item); }} class={cn("p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700", item.is_starred ? "text-amber-500" : "text-slate-400 hover:text-amber-500")}>
-                                <Star class={cn("w-3.5 h-3.5", item.is_starred && "fill-current")} />
+                        <!-- Quick Menu Trigger -->
+                        <div class="absolute top-4 right-4 z-20">
+                            <button 
+                                onclick={(e) => openThreeDotsMenu(e, item)}
+                                class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-indigo-600 transition-all"
+                            >
+                                <MoreVertical class="w-4 h-4" />
                             </button>
-                            <button onclick={(e) => { e.stopPropagation(); toggleArchive(item); }} class={cn("p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700", item.is_archived ? "text-indigo-600" : "text-slate-400 hover:text-indigo-600")}>
-                                <ArchiveIcon class="w-3.5 h-3.5" />
-                            </button>
-                            <button onclick={(e) => { e.stopPropagation(); openShareModal(item); }} class={cn("p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700", (item.is_public || (item.permissions && item.permissions.length > 0)) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-indigo-600")}>
-                                <Share2 class="w-3.5 h-3.5" />
-                            </button>
-                            <button onclick={(e) => { e.stopPropagation(); moveToTrash(item); }} class="p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500">
-                                <Trash class="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-
-                        <!-- Direct Category Actions for Grid -->
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 z-20 flex bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl p-1 shadow-2xl border border-slate-100 dark:border-slate-700 flex-wrap max-w-[200px] justify-center gap-1">
-                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'work'); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", item.category === 'work' ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-indigo-600")}>Work</button>
-                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, 'personal'); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", item.category === 'personal' ? "bg-emerald-600 text-white" : "text-slate-500 hover:text-emerald-600")}>Personal</button>
-                            {#each customCategories as cat}
-                                <button onclick={(e) => { e.stopPropagation(); changeCategory(item, cat.name, cat.id); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", item.category_id === cat.id ? `${cat.color} text-white` : "text-slate-500 hover:text-indigo-600")}>{cat.name}</button>
-                            {/each}
-                            <button onclick={(e) => { e.stopPropagation(); changeCategory(item, null, null); }} class={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase transition-all", (item.category === null && !item.category_id) ? "bg-slate-600 text-white" : "text-slate-500 hover:text-slate-700")}>None</button>
                         </div>
 
                         <div class={cn(
@@ -545,7 +589,7 @@
                                 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200" 
                                 : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200"
                         )}>
-                            <Icon class={cn("w-10 h-10 transition-transform duration-500", item.is_folder && "fill-current")} />
+                            <svelte:component this={Icon} class={cn("w-10 h-10 transition-transform duration-500", item.is_folder && "fill-current")} />
                         </div>
                         
                         <div class="w-full">
@@ -604,30 +648,6 @@
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Assign Category</label>
                     <div class="grid grid-cols-3 gap-3">
-                        <button 
-                            onclick={() => { selectedCategory = 'work'; selectedCategoryId = null; }}
-                            class={cn(
-                                "flex items-center justify-center space-x-3 p-3 rounded-2xl border-2 transition-all font-bold text-xs",
-                                selectedCategory === 'work' 
-                                    ? "bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 shadow-inner" 
-                                    : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
-                            )}
-                        >
-                            <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                            <span>Work</span>
-                        </button>
-                        <button 
-                            onclick={() => { selectedCategory = 'personal'; selectedCategoryId = null; }}
-                            class={cn(
-                                "flex items-center justify-center space-x-3 p-3 rounded-2xl border-2 transition-all font-bold text-xs",
-                                selectedCategory === 'personal' 
-                                    ? "bg-emerald-50 border-emerald-500 text-emerald-600 dark:bg-emerald-900/20 shadow-inner" 
-                                    : "bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-slate-700"
-                            )}
-                        >
-                            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            <span>Personal</span>
-                        </button>
                         <button 
                             onclick={() => { selectedCategory = null; selectedCategoryId = null; }}
                             class={cn(
@@ -721,6 +741,92 @@
                         {/if}
                     </div>
                 {/if}
+            </div>
+        </div>
+    </div>
+{/if}
+
+<!-- Context Menu -->
+{#if contextMenu}
+    <ContextMenu 
+        x={contextMenu.x} 
+        y={contextMenu.y} 
+        item={contextMenu.item} 
+        categories={customCategories}
+        onclose={() => contextMenu = null}
+        onaction={handleAction}
+    />
+{/if}
+
+<!-- Move to Folder Modal -->
+{#if showMoveModal}
+    <div 
+        class="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-md flex items-center justify-center z-[70] p-6"
+        transition:fade={{ duration: 200 }}
+    >
+        <div 
+            class="bg-white dark:bg-slate-900 rounded-[48px] p-10 w-full max-w-md shadow-2xl border border-white/20 dark:border-slate-800 relative overflow-hidden"
+            transition:fly={{ y: 40, duration: 400, easing: quintOut }}
+        >
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-indigo-100 dark:bg-indigo-900/40 p-2.5 rounded-2xl">
+                        <Folder class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Move to Folder</h2>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-widest truncate max-w-[200px]">{moveTargetItem?.name}</p>
+                    </div>
+                </div>
+                <button onclick={() => showMoveModal = false} class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
+                    <X class="w-5 h-5" />
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <div class="max-h-60 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+                    <button 
+                        onclick={() => selectedDestinationId = null}
+                        class={cn(
+                            "w-full flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all group",
+                            selectedDestinationId === null 
+                                ? "bg-indigo-50 border-indigo-500 dark:bg-indigo-900/20 shadow-inner" 
+                                : "bg-slate-50 border-transparent hover:border-slate-200 dark:bg-slate-800/30"
+                        )}
+                    >
+                        <LayoutGrid class="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
+                        <span class="font-bold text-sm text-slate-700 dark:text-slate-200">Main Drive (Root)</span>
+                    </button>
+
+                    {#each allFolders as folder}
+                        <button 
+                            onclick={() => selectedDestinationId = folder.id}
+                            class={cn(
+                                "w-full flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all group",
+                                selectedDestinationId === folder.id 
+                                    ? "bg-indigo-50 border-indigo-500 dark:bg-indigo-900/20 shadow-inner" 
+                                    : "bg-slate-50 border-transparent hover:border-slate-200 dark:bg-slate-800/30"
+                            )}
+                        >
+                            <Folder class="w-5 h-5 text-amber-500 fill-current" />
+                            <span class="font-bold text-sm text-slate-700 dark:text-slate-200">{folder.name}</span>
+                        </button>
+                    {/each}
+
+                    {#if allFolders.length === 0}
+                        <div class="text-center py-8">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest italic">No target folders available</p>
+                        </div>
+                    {/if}
+                </div>
+
+                <button 
+                    onclick={confirmMove}
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-[24px] py-4 shadow-xl shadow-indigo-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center space-x-2"
+                >
+                    <span>Confirm Move</span>
+                    <ArrowLeft class="w-4 h-4 rotate-180" />
+                </button>
             </div>
         </div>
     </div>

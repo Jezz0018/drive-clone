@@ -3,6 +3,8 @@ import { writable } from 'svelte/store';
 export const user = writable(null);
 export const token = writable(typeof window !== 'undefined' ? localStorage.getItem('token') : null);
 
+export const storageUsage = writable({ used: 0, limit: 10 * 1024 * 1024 * 1024 }); // Default 10GB limit
+
 token.subscribe((value) => {
     if (typeof window !== 'undefined') {
         if (value) {
