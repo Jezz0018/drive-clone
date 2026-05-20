@@ -12,3 +12,4 @@ pydantic-settings
 python-dotenv
 python-slugify
 aiofiles
+captcha

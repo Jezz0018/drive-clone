@@ -37,7 +37,7 @@
             formData.append('username', email);
             formData.append('password', password);
             formData.append('captcha_id', captcha.id);
-            formData.append('captcha_answer', captchaAnswer);
+            formData.append('captcha_answer', captchaAnswer.trim());
 
             const response = await api.post('/auth/login/access-token', formData);
             token.set(response.data.access_token);
@@ -119,9 +119,8 @@
                     </div>
                     
                     <div class="space-y-2">
-                        <div class="flex justify-between items-center ml-1">
+                        <div class="ml-1">
                             <label for="password" class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
-                            <button type="button" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline bg-transparent border-none p-0 cursor-pointer">Reset</button>
                         </div>
                         <div class="relative group">
                             <Lock class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
@@ -145,9 +144,9 @@
                                     <ShieldCheck class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 {#if captcha}
-                                    <span class="font-black text-lg text-slate-700 dark:text-slate-200 tracking-wider font-mono" in:fade>{captcha.challenge}</span>
+                                    <img src={captcha.challenge} alt="Captcha Challenge" class="h-10 rounded-lg shadow-sm" in:fade />
                                 {:else}
-                                    <div class="h-6 w-20 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-lg"></div>
+                                    <div class="h-10 w-32 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-lg"></div>
                                 {/if}
                             </div>
                             <button 
@@ -165,8 +164,8 @@
                                 bind:value={captchaAnswer} 
                                 type="text" 
                                 required 
-                                placeholder="Enter result"
-                                class="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-[22px] focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500/50 transition-all outline-none text-slate-700 dark:text-slate-200 font-bold text-sm text-center" 
+                                placeholder="Enter code"
+                                class="w-full px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-[22px] focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500/50 transition-all outline-none text-slate-700 dark:text-slate-200 font-bold text-sm text-center uppercase" 
                             />
                         </div>
                     </div>

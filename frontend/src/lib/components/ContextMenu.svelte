@@ -47,7 +47,7 @@
 <svelte:window onclick={handleWindowClick} oncontextmenu={handleWindowClick} />
 
 <div 
-    class="fixed z-[100] min-w-[220px] bg-app-surface dark:bg-slate-900 border border-app-border dark:border-slate-800 rounded-2xl shadow-2xl p-2 py-3 overflow-hidden"
+    class="fixed z-[100] min-w-[220px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-2 py-3 overflow-hidden"
     style="left: {x}px; top: {y}px;"
     transition:scale={{ duration: 150, start: 0.95 }}
     onclick={(e) => e.stopPropagation()}
@@ -136,7 +136,7 @@
                 </button>
             {/if}
 
-            <div class="h-px bg-app-border dark:bg-slate-800 my-2 mx-2"></div>
+            <div class="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-2"></div>
 
             <div>
                 <button 
@@ -155,7 +155,7 @@
 
                 {#if showCategories}
                     <div 
-                        class="mt-1 space-y-0.5 bg-app-main dark:bg-slate-800/30 rounded-xl p-1 mx-1 border border-app-border dark:border-slate-800"
+                        class="mt-1 space-y-0.5 bg-slate-50 dark:bg-slate-800/30 rounded-xl p-1 mx-1 border border-slate-100 dark:border-slate-800"
                         transition:slide={{ duration: 200 }}
                     >
                         {#each categories as cat}
@@ -178,7 +178,7 @@
                 {/if}
             </div>
 
-            <div class="h-px bg-app-border dark:bg-slate-800 my-2 mx-2"></div>
+            <div class="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-2"></div>
 
             <button 
                 onclick={() => handleAction('trash')}

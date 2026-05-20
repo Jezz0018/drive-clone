@@ -13,8 +13,11 @@ from app.schemas import captcha as captcha_schema
 from app.models.user import User
 from app.models.captcha import Captcha
 from app.models.user_otp import UserOTP
+from captcha.image import ImageCaptcha
 import random
 import uuid
+import base64
+import io
 
 router = APIRouter()
 
@@ -22,11 +25,14 @@ router = APIRouter()
 async def get_captcha(
     db: AsyncSession = Depends(deps.get_db)
 ) -> Any:
-    # Generate simple math captcha: a + b = ?
-    a = random.randint(1, 10)
-    b = random.randint(1, 10)
-    challenge = f"{a} + {b} = ?"
-    answer = str(a + b)
+    # Generate traditional image captcha
+    characters = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ" # Avoid ambiguous chars like 0, O, 1, l
+    answer = "".join(random.choices(characters, k=5))
+    
+    generator = ImageCaptcha(width=200, height=80)
+    image_data = generator.generate(answer)
+    base64_image = base64.b64encode(image_data.getvalue()).decode()
+    challenge = f"data:image/png;base64,{base64_image}"
     
     db_obj = Captcha(challenge=challenge, answer=answer)
     db.add(db_obj)
@@ -48,7 +54,7 @@ async def login_access_token(
     if not captcha:
         raise HTTPException(status_code=400, detail="Invalid captcha session")
     
-    if captcha.answer != captcha_answer:
+    if captcha.answer.lower() != captcha_answer.strip().lower():
         # Delete failed captcha
         await db.delete(captcha)
         await db.commit()

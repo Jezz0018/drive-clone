@@ -309,9 +309,28 @@
         }
     }
 
-    function downloadFile(item: Item) {
-        window.open(`${BASE_URL}/items/${item.id}/download/`, '_blank');
-        toasts.info(`Downloading ${item.name}...`);
+    async function downloadFile(item: Item) {
+        try {
+            toasts.info(`Preparing ${item.name}...`);
+            const response = await api.get(`/items/${item.id}/download`, {
+                responseType: 'blob'
+            });
+            
+            // Create a blob URL and trigger download
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', item.name);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            
+            toasts.success(`Downloaded ${item.name}`);
+        } catch (e) {
+            console.error('Download error:', e);
+            toasts.error('Failed to download file.');
+        }
     }
 
     async function openShareModal(item: Item) {
@@ -328,6 +347,19 @@
         currentFolderId = crumb.id;
         breadcrumbs = breadcrumbs.slice(0, index + 1);
         fetchItems();
+    }
+
+    async function emptyTrash() {
+        if (!confirm('Are you sure you want to permanently delete all items in the trash? This action cannot be undone.')) return;
+        
+        try {
+            await api.delete('/items/trash/empty');
+            items = [];
+            toasts.success('Trash emptied successfully');
+            fetchStorageUsage();
+        } catch (e) {
+            toasts.error('Failed to empty trash.');
+        }
     }
 
     async function createFolder() {
@@ -565,44 +597,54 @@
                 </button>
             </div>
             
-            <!-- Create New Switcher -->
-            <div class="relative">
+            <!-- Action Button Switcher -->
+            {#if isTrashed}
                 <button 
-                    onclick={(e) => { e.stopPropagation(); showCreateMenu = !showCreateMenu; showSortMenu = false; }}
-                    class={cn(
-                        "flex items-center justify-center space-x-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[24px] px-10 py-4 shadow-2xl shadow-indigo-500/30 dark:shadow-none transition-all active:scale-[0.98] font-bold uppercase tracking-widest",
-                        showCreateMenu && "ring-4 ring-indigo-500/10"
-                    )}
+                    onclick={emptyTrash}
+                    class="flex items-center justify-center space-x-3 bg-rose-600 hover:bg-rose-700 text-white rounded-[24px] px-10 py-4 shadow-2xl shadow-rose-500/30 dark:shadow-none transition-all active:scale-[0.98] font-bold uppercase tracking-widest"
                 >
-                    <Plus class="w-5 h-5 stroke-[3px]" />
-                    <span class="text-sm">Create New</span>
-                    <ChevronDown class="w-4 h-4 ml-1 opacity-70" />
+                    <Trash class="w-5 h-5 stroke-[3px]" />
+                    <span class="text-sm">Empty Trash</span>
                 </button>
-
-                {#if showCreateMenu}
-                    <div 
-                        class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
-                        transition:scale={{ duration: 150, start: 0.95 }}
-                        onmouseleave={() => showCreateMenu = false}
-                        onclick={(e) => e.stopPropagation()}
+            {:else}
+                <div class="relative">
+                    <button 
+                        onclick={(e) => { e.stopPropagation(); showCreateMenu = !showCreateMenu; showSortMenu = false; }}
+                        class={cn(
+                            "flex items-center justify-center space-x-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[24px] px-10 py-4 shadow-2xl shadow-indigo-500/30 dark:shadow-none transition-all active:scale-[0.98] font-bold uppercase tracking-widest",
+                            showCreateMenu && "ring-4 ring-indigo-500/10"
+                        )}
                     >
-                        <button 
-                            onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = 'New Folder'; showCreateMenu = false; }}
-                            class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                        <Plus class="w-5 h-5 stroke-[3px]" />
+                        <span class="text-sm">Create New</span>
+                        <ChevronDown class="w-4 h-4 ml-1 opacity-70" />
+                    </button>
+
+                    {#if showCreateMenu}
+                        <div 
+                            class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                            transition:scale={{ duration: 150, start: 0.95 }}
+                            onmouseleave={() => showCreateMenu = false}
+                            onclick={(e) => e.stopPropagation()}
                         >
-                            <FolderPlus class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
-                            <span class="text-xs font-bold">New Folder</span>
-                        </button>
-                        <button 
-                            onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = ''; showCreateMenu = false; }}
-                            class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
-                        >
-                            <UploadCloud class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
-                            <span class="text-xs font-bold">Upload File</span>
-                        </button>
-                    </div>
-                {/if}
-            </div>
+                            <button 
+                                onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = 'New Folder'; showCreateMenu = false; }}
+                                class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                            >
+                                <FolderPlus class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                                <span class="text-xs font-bold">New Folder</span>
+                            </button>
+                            <button 
+                                onclick={() => { showUploadModal = true; selectedCategory = null; selectedCategoryId = null; fileToUpload = null; newFolderName = ''; showCreateMenu = false; }}
+                                class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                            >
+                                <UploadCloud class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                                <span class="text-xs font-bold">Upload File</span>
+                            </button>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
     </div>
 
@@ -640,7 +682,7 @@
                 </button>
             </div>
         {:else if viewMode === 'list'}
-            <div class="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/50 dark:border-slate-800 shadow-sm overflow-hidden" in:fly={{ y: 20, duration: 400 }}>
+            <div class="bg-slate-50/80 dark:bg-slate-900 rounded-[32px] border border-slate-200/50 dark:border-slate-800 shadow-sm overflow-hidden" in:fly={{ y: 20, duration: 400 }}>
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
@@ -665,9 +707,10 @@
                                     <div class="flex items-center space-x-5">
                                         <div class={cn(
                                             "p-3 rounded-2xl transition-all shadow-sm group-hover:scale-110 relative",
-                                            item.is_folder 
-                                                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" 
-                                                : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                                            item.is_folder
+                                                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                                                : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+
                                         )}>
                                             <svelte:component this={Icon} class={cn("w-5 h-5", item.is_folder && "fill-current")} />
                                             {#if item.is_starred}
@@ -702,12 +745,23 @@
                                     <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">{item.is_folder ? 'CONTAINER' : formatSize(item.size)}</span>
                                 </td>
                                 <td class="py-5 px-8 text-right">
-                                    <button 
-                                        onclick={(e) => openThreeDotsMenu(e, item)}
-                                        class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 transition-all"
-                                    >
-                                        <MoreHorizontal class="w-5 h-5" />
-                                    </button>
+                                    <div class="flex items-center justify-end space-x-2">
+                                        {#if !item.is_folder}
+                                            <button 
+                                                onclick={(e) => { e.stopPropagation(); downloadFile(item); }}
+                                                class="p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-400 hover:text-indigo-600 transition-all opacity-0 group-hover:opacity-100"
+                                                title="Download"
+                                            >
+                                                <Download class="w-4 h-4" />
+                                            </button>
+                                        {/if}
+                                        <button 
+                                            onclick={(e) => openThreeDotsMenu(e, item)}
+                                            class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 transition-all"
+                                        >
+                                            <MoreHorizontal class="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         {/each}
@@ -720,16 +774,25 @@
                     {@const Icon = getFileIcon(item)}
                     <div 
                         class={cn(
-                            "group bg-white dark:bg-slate-800/40 p-6 rounded-[40px] border-2 border-transparent transition-all duration-500 relative cursor-pointer flex flex-col items-center text-center",
+                            "group bg-slate-50/50 dark:bg-slate-800/40 p-6 rounded-[40px] border-2 border-transparent transition-all duration-500 relative cursor-pointer flex flex-col items-center text-center",
                             selectedItemId === item.id 
                                 ? "border-indigo-500 bg-white dark:bg-slate-800 shadow-2xl shadow-indigo-500/10 scale-[1.02]" 
-                                : "hover:bg-white dark:hover:bg-slate-800 hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-1 border-slate-100 dark:border-slate-800/50 shadow-sm"
+                                : "hover:bg-white dark:hover:bg-slate-800 hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-1 border-slate-200 dark:border-slate-800/50 shadow-sm"
                         )}
                         onclick={() => selectedItemId = item.id}
                         in:scale={{ duration: 400, start: 0.9, easing: quintOut }}
                     >
-                        <!-- Quick Menu Trigger -->
-                        <div class="absolute top-4 right-4 z-20">
+                        <!-- Quick Menu Trigger & Actions -->
+                        <div class="absolute top-4 right-4 z-20 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            {#if !item.is_folder}
+                                <button 
+                                    onclick={(e) => { e.stopPropagation(); downloadFile(item); }}
+                                    class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-indigo-600 transition-all"
+                                    title="Download"
+                                >
+                                    <Download class="w-4 h-4" />
+                                </button>
+                            {/if}
                             <button 
                                 onclick={(e) => openThreeDotsMenu(e, item)}
                                 class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-sm border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-indigo-600 transition-all"
@@ -740,9 +803,9 @@
 
                         <div class={cn(
                             "w-20 h-20 flex items-center justify-center rounded-[32px] mb-6 transition-all duration-500 group-hover:rotate-6 shadow-sm relative",
-                            item.is_folder 
-                                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200" 
-                                : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200"
+                            item.is_folder
+                                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 group-hover:bg-amber-200"
+                                : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 group-hover:bg-indigo-200"
                         )}>
                             <svelte:component this={Icon} class={cn("w-10 h-10 transition-transform duration-500", item.is_folder && "fill-current")} />
                             {#if item.is_starred}

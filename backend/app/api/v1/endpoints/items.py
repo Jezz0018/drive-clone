@@ -54,8 +54,24 @@ async def get_storage_usage(
         "file_count": file_count
     }
 
+@router.get("/share/{token}/info", response_model=ItemSchema)
+async def get_shared_item_info(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    token: str
+) -> Any:
+    result = await db.execute(
+        select(Item)
+        .options(selectinload(Item.permissions), selectinload(Item.category_obj))
+        .filter(Item.sharing_token == token, Item.is_public == True)
+    )
+    db_obj = result.scalars().first()
+    if not db_obj:
+        raise HTTPException(status_code=404, detail="Shared item not found")
+    return db_obj
+
 @router.get("/share/{token}")
-async def get_shared_item(
+async def download_shared_item(
     *,
     db: AsyncSession = Depends(deps.get_db),
     token: str
@@ -82,7 +98,11 @@ async def toggle_item_share(
     current_user: User = Depends(deps.get_current_user),
     item_id: uuid.UUID
 ) -> Any:
-    result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
+    result = await db.execute(
+        select(Item)
+        .options(selectinload(Item.permissions), selectinload(Item.category_obj))
+        .filter(Item.id == item_id, Item.owner_id == current_user.id)
+    )
     db_obj = result.scalars().first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -411,3 +431,30 @@ async def delete_item(
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
+
+@router.delete("/trash/empty", response_model=dict)
+async def empty_trash(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    # Get all items in trash for this user
+    result = await db.execute(select(Item).filter(Item.owner_id == current_user.id, Item.is_trashed == True))
+    items_to_delete = result.scalars().all()
+    
+    count = 0
+    for item in items_to_delete:
+        # Delete physical file if it's a file
+        if not item.is_folder and item.file_path:
+            file_path = os.path.join(settings.UPLOAD_DIR, item.file_path)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    print(f"Error deleting physical file {file_path}: {e}")
+        
+        await db.delete(item)
+        count += 1
+    
+    await db.commit()
+    return {"message": f"Successfully emptied trash. {count} items removed permanently."}

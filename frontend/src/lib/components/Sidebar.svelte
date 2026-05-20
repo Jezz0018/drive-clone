@@ -93,7 +93,7 @@
                                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
                             )}
                         >                            <div class="flex items-center space-x-3">
-                                <Icon class={cn("w-5 h-5 transition-colors stroke-[2px]", activeView === item.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300")} />
+                                <Icon class={cn("w-5 h-5 transition-colors stroke-[2px]", activeView === item.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")} />
                                 <span class="font-bold text-sm tracking-tight">{item.label}</span>
                             </div>
                             {#if activeView === item.id}
