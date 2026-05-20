@@ -75,7 +75,7 @@
 <aside class="w-80 bg-slate-100 dark:bg-slate-900 h-screen flex flex-col border-r border-slate-200/50 dark:border-slate-800/50 z-30 transition-colors duration-300 overflow-hidden">
     <!-- Navigation Wrapper -->
     <div class="flex-1 overflow-y-auto custom-scrollbar">
-        <nav class="px-4 py-8 space-y-8">
+        <nav class="px-4 pt-8 pb-20 space-y-8">
             <!-- Main Section -->
             <div>
                 <div class="px-4 mb-4">

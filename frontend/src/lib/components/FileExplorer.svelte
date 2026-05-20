@@ -664,12 +664,17 @@
                                 <td class="py-5 px-8">
                                     <div class="flex items-center space-x-5">
                                         <div class={cn(
-                                            "p-3 rounded-2xl transition-all shadow-sm group-hover:scale-110",
+                                            "p-3 rounded-2xl transition-all shadow-sm group-hover:scale-110 relative",
                                             item.is_folder 
                                                 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" 
                                                 : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
                                         )}>
                                             <svelte:component this={Icon} class={cn("w-5 h-5", item.is_folder && "fill-current")} />
+                                            {#if item.is_starred}
+                                                <div class="absolute -top-1 -right-1 bg-white dark:bg-slate-900 rounded-full p-0.5 shadow-sm border border-slate-100 dark:border-slate-800">
+                                                    <Star class="w-2.5 h-2.5 text-amber-500 fill-current" />
+                                                </div>
+                                            {/if}
                                         </div>
                                         <div class="flex flex-col min-w-0">
                                             {#if item.is_folder}
@@ -734,12 +739,17 @@
                         </div>
 
                         <div class={cn(
-                            "w-20 h-20 flex items-center justify-center rounded-[32px] mb-6 transition-all duration-500 group-hover:rotate-6 shadow-sm",
+                            "w-20 h-20 flex items-center justify-center rounded-[32px] mb-6 transition-all duration-500 group-hover:rotate-6 shadow-sm relative",
                             item.is_folder 
                                 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200" 
                                 : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200"
                         )}>
                             <svelte:component this={Icon} class={cn("w-10 h-10 transition-transform duration-500", item.is_folder && "fill-current")} />
+                            {#if item.is_starred}
+                                <div class="absolute top-2 left-2 bg-white dark:bg-slate-900 rounded-xl p-1.5 shadow-lg border border-slate-100 dark:border-slate-800 animate-in zoom-in-50 duration-300">
+                                    <Star class="w-4 h-4 text-amber-500 fill-current" />
+                                </div>
+                            {/if}
                         </div>
                         
                         <div class="w-full">

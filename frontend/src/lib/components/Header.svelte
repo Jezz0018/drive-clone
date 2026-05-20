@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Search as SearchIcon, Database, ShieldCheck, HelpCircle, UserPlus } from 'lucide-svelte';
+    import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Search as SearchIcon, Database, ShieldCheck, HelpCircle, Home } from 'lucide-svelte';
     import { token, user } from '$lib/stores';
     import { goto } from '$app/navigation';
     import { cn } from '$lib/utils';
@@ -46,6 +46,15 @@
         </div>
     </button>
 
+    <!-- Home Button -->
+    <button 
+        onclick={() => goto('/')}
+        class="ml-2 p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all"
+        title="Back to Home"
+    >
+        <Home class="w-5 h-5" />
+    </button>
+
     <!-- Search Bar -->
     <div class="flex-1 max-w-2xl mx-12 hidden md:block">
         <div class="relative group">
@@ -59,10 +68,6 @@
                 class="block w-full pl-12 pr-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-200 dark:focus:border-indigo-900/50 focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-900/10 transition-all sm:text-sm outline-none text-slate-700 dark:text-slate-200"
                 oninput={(e) => onSearch(e.currentTarget.value)}
             />
-            <div class="absolute inset-y-0 right-0 pr-4 flex items-center space-x-1">
-                <span class="text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">⌘</span>
-                <span class="text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">F</span>
-            </div>
         </div>
     </div>
 
@@ -214,16 +219,6 @@
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Personal Account</p>
                         <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{$user?.email || 'Unknown Email'}</p>
                     </div>
-
-                    <button 
-                        onclick={() => { showProfileMenu = false; toasts.info('Multi-account support coming soon'); }}
-                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors"
-                    >
-                        <UserPlus class="w-4 h-4 text-indigo-500" />
-                        <span>Add another account</span>
-                    </button>
-
-                    <div class="h-px bg-slate-50 dark:bg-slate-700 my-2 mx-4"></div>
 
                     <button 
                         onclick={logout}
