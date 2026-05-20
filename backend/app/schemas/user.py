@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     phone_number: Optional[str] = None
     is_active: Optional[bool] = True
     is_verified: Optional[bool] = False
+    profile_picture: Optional[str] = None
 
 class UserCreate(UserBase):
     email: EmailStr

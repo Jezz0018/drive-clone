@@ -15,6 +15,7 @@ class User(Base):
     phone_number = Column(String)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    profile_picture = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     items = relationship("Item", back_populates="owner", cascade="all, delete-orphan")
