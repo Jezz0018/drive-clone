@@ -5,6 +5,12 @@ export const token = writable(typeof window !== 'undefined' ? localStorage.getIt
 
 export const storageUsage = writable({ used: 0, limit: 10 * 1024 * 1024 * 1024 }); // Default 10GB limit
 
+// UI State for Global Modals
+export const ui = writable({
+    showUploadModal: false,
+    uploadType: 'file' as 'file' | 'folder'
+});
+
 token.subscribe((value) => {
     if (typeof window !== 'undefined') {
         if (value) {

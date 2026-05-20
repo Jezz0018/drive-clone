@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
@@ -324,8 +325,14 @@ async def create_folder(
     )
     db.add(db_obj)
     await db.commit()
-    await db.refresh(db_obj)
-    return db_obj
+    
+    # Eagerly load relationships for response validation
+    result = await db.execute(
+        select(Item)
+        .options(selectinload(Item.permissions), selectinload(Item.category_obj))
+        .filter(Item.id == db_obj.id)
+    )
+    return result.scalars().first()
 
 @router.post("/upload", response_model=ItemSchema)
 async def upload_file(
@@ -362,8 +369,14 @@ async def upload_file(
     )
     db.add(db_obj)
     await db.commit()
-    await db.refresh(db_obj)
-    return db_obj
+    
+    # Eagerly load relationships for response validation
+    result = await db.execute(
+        select(Item)
+        .options(selectinload(Item.permissions), selectinload(Item.category_obj))
+        .filter(Item.id == file_id)
+    )
+    return result.scalars().first()
 
 @router.patch("/{item_id}", response_model=ItemSchema)
 async def update_item(

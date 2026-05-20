@@ -15,19 +15,25 @@
         Zap,
         LayoutDashboard,
         Archive,
-        User
+        User,
+        FolderPlus,
+        UploadCloud,
+        LogOut
     } from 'lucide-svelte';
     import { page } from '$app/stores';
     import { cn } from '$lib/utils';
     import { goto } from '$app/navigation';
     import { toasts } from '$lib/toasts';
     import CategoryManager from './CategoryManager.svelte';
+    import StorageLiquid from './StorageLiquid.svelte';
     import api from '$lib/api';
-    import { storageUsage } from '$lib/stores';
+    import { storageUsage, ui } from '$lib/stores';
+    import { fade, slide, scale } from 'svelte/transition';
 
     let { activeView = 'my-drive' } = $props();
     let showCategoryManager = $state(false);
     let customCategories = $state<any[]>([]);
+    let showCreateMenu = $state(false);
 
     async function fetchCustomCategories() {
         try {
@@ -76,6 +82,50 @@
     <!-- Navigation Wrapper -->
     <div class="flex-1 overflow-y-auto custom-scrollbar">
         <nav class="px-4 pt-8 pb-20 space-y-8">
+            <!-- Create Button Section -->
+            <div class="px-2">
+                <div class="relative">
+                    <button 
+                        onclick={(e) => { e.stopPropagation(); showCreateMenu = !showCreateMenu; }}
+                        class={cn(
+                            "w-full flex items-center justify-center space-x-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[24px] py-4 shadow-2xl shadow-indigo-500/30 dark:shadow-none transition-all active:scale-[0.98] font-black uppercase tracking-[0.2em] text-xs",
+                            showCreateMenu && "ring-4 ring-indigo-500/10"
+                        )}
+                    >
+                        <Plus class="w-5 h-5 stroke-[3px]" />
+                        <span>Create New</span>
+                    </button>
+
+                    {#if showCreateMenu}
+                        <div 
+                            class="absolute left-0 top-full mt-4 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[28px] shadow-2xl p-2 z-50 overflow-hidden"
+                            transition:scale={{ duration: 150, start: 0.95 }}
+                            onmouseleave={() => showCreateMenu = false}
+                            onclick={(e) => e.stopPropagation()}
+                        >
+                            <button 
+                                onclick={() => { ui.update(s => ({ ...s, showUploadModal: true, uploadType: 'folder' })); showCreateMenu = false; }}
+                                class="w-full flex items-center space-x-4 px-4 py-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                            >
+                                <div class="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-xl group-hover:scale-110 transition-transform">
+                                    <FolderPlus class="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <span class="text-xs font-black uppercase tracking-widest">New Folder</span>
+                            </button>
+                            <button 
+                                onclick={() => { ui.update(s => ({ ...s, showUploadModal: true, uploadType: 'file' })); showCreateMenu = false; }}
+                                class="w-full flex items-center space-x-4 px-4 py-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all group"
+                            >
+                                <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-xl group-hover:scale-110 transition-transform">
+                                    <UploadCloud class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <span class="text-xs font-black uppercase tracking-widest">Upload File</span>
+                            </button>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+
             <!-- Main Section -->
             <div>
                 <div class="px-4 mb-4">
@@ -141,36 +191,29 @@
                 <div class="mb-4 px-4">
                     <span class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Storage Usage</span>
                 </div>
-                <div class="mx-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="flex items-center justify-between mb-4">
+                <div class="mx-2 bg-slate-200/50 dark:bg-slate-800/40 rounded-[32px] p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between mb-5">
                         <div class="flex items-center space-x-2">
                             <div class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none">
                                 <Database class="w-3.5 h-3.5 text-white" />
                             </div>
-                            <span class="text-xs font-black text-slate-700 dark:text-slate-200">Personal Cloud</span>
+                            <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">DRIVE X</span>
                         </div>
-                        <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">
-                            {Math.round(($storageUsage.used / $storageUsage.limit) * 100)}%
-                        </span>
                     </div>
                     
-                    <div class="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-4">
-                        <div 
-                            class="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-1000"
-                            style="width: {($storageUsage.used / $storageUsage.limit) * 100}%"
-                        ></div>
-                    </div>
+                    <StorageLiquid />
                     
-                    <div class="flex justify-between items-center text-[10px] font-bold mb-5">
-                        <span class="text-slate-500 dark:text-slate-400">{formatSize($storageUsage.used)} used</span>
-                        <span class="text-slate-400">of {formatSize($storageUsage.limit)}</span>
+                    <div class="flex justify-between items-center text-[9px] font-black uppercase tracking-widest mt-5 mb-5 px-1">
+                        <span class="text-slate-500 dark:text-slate-400">{formatSize($storageUsage.used)}</span>
+                        <span class="text-slate-300 dark:text-slate-600">|</span>
+                        <span class="text-slate-400">{formatSize($storageUsage.limit)}</span>
                     </div>
 
                     <button 
                         onclick={() => toasts.info('Upgrade plans coming soon!')}
-                        class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-700 text-indigo-600 dark:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 shadow-sm border border-indigo-200 dark:border-transparent"
+                        class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95 shadow-xl shadow-indigo-500/10 border border-transparent"
                     >
-                        Upgrade Plan
+                        Upgrade Now
                     </button>
                 </div>
             </div>
