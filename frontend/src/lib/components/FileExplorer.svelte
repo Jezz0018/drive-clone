@@ -70,9 +70,9 @@
         isRecent = false,
         isArchived = false,
         category = undefined,
-        sharedWithMe = false,
-        mimeType = undefined
-    } = $props<{
+        mimeType = undefined,
+        mimeFilter = undefined
+        } from $props<{
         title?: string;
         isStarred?: boolean;
         isTrashed?: boolean;
@@ -81,15 +81,18 @@
         category?: string;
         sharedWithMe?: boolean;
         mimeType?: string;
-    }>();
+        mimeFilter?: string;
+        }>();
 
-    // UI State
-    let items = $state<Item[]>([]);
-    let loading = $state(true);
-    let viewMode = $state<'list' | 'grid'>('grid');
-    let searchQuery = $state('');
-    let sortKey = $state<'name' | 'size' | 'date'>('name');
-    let sortOrder = $state<'asc' | 'desc'>('asc');
+        // UI State
+        let items = $state<Item[]>([]);
+        let loading = $state(true);
+        let viewMode = $state<'list' | 'grid'>('grid');
+        let searchQuery = $state('');
+        let sortKey = $state<'name' | 'size' | 'date'>('name');
+        let sortOrder = $state<'asc' | 'desc'>('asc');
+        let currentMimeFilter = $state<string | undefined>(mimeFilter);
+
     let showSortMenu = $state(false);
     
     // Core Logic State
@@ -129,8 +132,14 @@
                 newFolderName = '';
                 fileToUpload = null;
             }
-            // Reset the global state so it can be triggered again
             ui.update(s => ({ ...s, showUploadModal: false }));
+        }
+    });
+
+    $effect(() => {
+        if ($ui.mimeFilter !== currentMimeFilter) {
+            currentMimeFilter = $ui.mimeFilter;
+            fetchItems();
         }
     });
 
@@ -150,6 +159,18 @@
             if (isStarred !== undefined) params.is_starred = isStarred;
             if (category) params.category = category;
             
+            // Apply Quick Filters
+            if (currentMimeFilter) {
+                const mimeMap: any = {
+                    'images': 'image/',
+                    'docs': 'application/pdf,text/,msword,officedocument',
+                    'video': 'video/',
+                    'audio': 'audio/',
+                    'zip': 'application/zip,application/x-rar,application/x-tar'
+                };
+                params.mime_type = mimeMap[currentMimeFilter];
+            }
+            
             const response = await api.get('/items/', { params });
             items = Array.isArray(response.data) ? response.data : [];
         } catch (e) {
@@ -157,6 +178,17 @@
             items = [];
         } finally {
             loading = false;
+        }
+    }
+
+    async function togglePin(item: Item) {
+        try {
+            const newStatus = !item.is_pinned;
+            await api.patch(`/items/${item.id}/`, { is_pinned: newStatus });
+            items = items.map(i => i.id === item.id ? { ...i, is_pinned: newStatus } : i);
+            toasts.success(newStatus ? 'Pinned to sidebar' : 'Unpinned from sidebar');
+        } catch (e) {
+            toasts.error('Failed to update pin status.');
         }
     }
 
@@ -254,6 +286,7 @@
         switch(action) {
             case 'star': await toggleStar(item); break;
             case 'archive': await toggleArchive(item); break;
+            case 'pin': await togglePin(item); break;
             case 'share': sharingItem = item; break;
             case 'download': downloadFile(item); break;
             case 'trash': await moveToTrash(item); break;

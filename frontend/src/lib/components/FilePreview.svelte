@@ -50,24 +50,33 @@
 </script>
 
 <div 
-    class="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12"
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 overflow-hidden"
     transition:fade={{ duration: 200 }}
 >
-    <!-- Backdrop -->
+    <!-- Premium Backdrop with Motion Blur -->
     <div 
-        class="absolute inset-0 bg-slate-900/90 dark:bg-[#020617]/95 backdrop-blur-xl"
+        class="absolute inset-0 bg-slate-950/60 backdrop-blur-3xl"
         onclick={onclose}
-    ></div>
+    >
+        <!-- Animated Background Blobs -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-50 dark:opacity-40">
+            <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/30 rounded-full blur-[120px] animate-blob-float"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/30 rounded-full blur-[120px] animate-blob-float-delayed"></div>
+            <div class="absolute top-[20%] right-[10%] w-[30%] h-[40%] bg-blue-600/20 rounded-full blur-[100px] animate-blob-float-reverse"></div>
+        </div>
+    </div>
 
     <!-- Preview Container -->
     <div 
         class={cn(
-            "bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl border border-white/20 dark:border-slate-800 relative overflow-hidden flex flex-col transition-all duration-500 ease-out",
+            "bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[48px] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.4)] border border-white/20 dark:border-white/5 relative overflow-hidden flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]",
             isFullScreen ? "w-full h-full rounded-none" : "w-full max-w-5xl h-[85vh]"
         )}
-        transition:scale={{ duration: 400, start: 0.95, easing: quintOut }}
+        transition:scale={{ duration: 500, start: 0.9, easing: quintOut }}
         onclick={(e) => e.stopPropagation()}
     >
+        <!-- Glass Shine Overlay -->
+        <div class="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent dark:from-white/2 opacity-50"></div>
         <!-- Toolbar -->
         <div class="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div class="flex items-center space-x-4 min-w-0">
@@ -175,3 +184,23 @@
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes blob-float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+
+    .animate-blob-float {
+        animation: blob-float 15s ease-in-out infinite;
+    }
+
+    .animate-blob-float-delayed {
+        animation: blob-float 18s ease-in-out infinite 2s;
+    }
+
+    .animate-blob-float-reverse {
+        animation: blob-float 20s ease-in-out infinite reverse;
+    }
+</style>

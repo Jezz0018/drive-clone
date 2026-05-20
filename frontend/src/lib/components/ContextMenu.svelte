@@ -10,7 +10,9 @@
         ChevronRight,
         RefreshCcw,
         Folder,
-        Info
+        Info,
+        Pin,
+        PinOff
     } from 'lucide-svelte';
     import { fade, scale, slide } from 'svelte/transition';
     import { cn } from '$lib/utils';
@@ -81,6 +83,16 @@
                 <div class="flex items-center space-x-3">
                     <Info class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
                     <span class="text-sm font-bold">View Details</span>
+                </div>
+            </button>
+
+            <button 
+                onclick={() => handleAction('pin')}
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-600 dark:text-slate-300 transition-colors group"
+            >
+                <div class="flex items-center space-x-3">
+                    <svelte:component this={item.is_pinned ? PinOff : Pin} class={cn("w-4 h-4 transition-colors", item.is_pinned ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-600")} />
+                    <span class="text-sm font-bold">{item.is_pinned ? 'Unpin from Sidebar' : 'Pin to Sidebar'}</span>
                 </div>
             </button>
 

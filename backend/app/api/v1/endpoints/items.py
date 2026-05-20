@@ -250,6 +250,7 @@ async def read_items(
     parent_id: Optional[uuid.UUID] = None,
     is_trashed: bool = False,
     is_starred: Optional[bool] = None,
+    is_pinned: Optional[bool] = None,
     is_archived: bool = False,
     category: Optional[str] = None,
     category_id: Optional[uuid.UUID] = None,
@@ -308,6 +309,28 @@ async def read_items(
     result = await db.execute(query)
     return result.scalars().all()
 
+from app.models.activity import Activity
+from app.schemas.activity import Activity as ActivitySchema
+
+@router.get("/activity", response_model=List[ActivitySchema])
+async def get_activity_feed(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    result = await db.execute(
+        select(Activity)
+        .filter(Activity.user_id == current_user.id)
+        .order_by(Activity.created_at.desc())
+        .limit(5)
+    )
+    return result.scalars().all()
+
+async def log_activity(db: AsyncSession, user_id: uuid.UUID, action: str, item_name: str, item_id: Optional[uuid.UUID] = None):
+    activity = Activity(user_id=user_id, action=action, item_name=item_name, item_id=item_id)
+    db.add(activity)
+    await db.flush()
+
 @router.post("/folders", response_model=ItemSchema)
 async def create_folder(
     *,
@@ -324,6 +347,7 @@ async def create_folder(
         category_id=folder_in.category_id
     )
     db.add(db_obj)
+    await log_activity(db, current_user.id, "create_folder", folder_in.name)
     await db.commit()
     
     # Eagerly load relationships for response validation
@@ -368,6 +392,7 @@ async def upload_file(
         category_id=category_id
     )
     db.add(db_obj)
+    await log_activity(db, current_user.id, "upload", file.filename, file_id)
     await db.commit()
     
     # Eagerly load relationships for response validation

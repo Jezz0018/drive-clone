@@ -8,7 +8,8 @@ export const storageUsage = writable({ used: 0, limit: 10 * 1024 * 1024 * 1024 }
 // UI State for Global Modals
 export const ui = writable({
     showUploadModal: false,
-    uploadType: 'file' as 'file' | 'folder'
+    uploadType: 'file' as 'file' | 'folder',
+    mimeFilter: undefined as string | undefined
 });
 
 token.subscribe((value) => {

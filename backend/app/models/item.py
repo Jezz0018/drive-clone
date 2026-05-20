@@ -23,6 +23,7 @@ class Item(Base):
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     
     is_starred = Column(Boolean, default=False)
+    is_pinned = Column(Boolean, default=False)
     is_trashed = Column(Boolean, default=False)
     trashed_at = Column(DateTime, nullable=True)
     is_archived = Column(Boolean, default=False)
