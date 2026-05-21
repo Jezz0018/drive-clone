@@ -14,6 +14,7 @@ from app.models.item_permission import ItemPermission
 from app.models.captcha import Captcha
 from app.models.user_otp import UserOTP
 from app.models.category import Category
+from app.models.activity import Activity
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -87,6 +88,4 @@ def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
-
     run_migrations_online()

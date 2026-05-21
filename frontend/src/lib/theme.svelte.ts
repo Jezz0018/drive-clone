@@ -12,7 +12,14 @@ class ThemeManager {
     }
 
     toggle() {
-        this.current = this.current === 'light' ? 'dark' : 'light';
+        if (this.current === 'light') {
+            this.current = 'dark';
+        } else if (this.current === 'dark') {
+            this.current = 'monochrome';
+        } else {
+            this.current = 'light';
+        }
+
         if (browser) {
             localStorage.setItem('theme', this.current);
             this.updateDocument();
@@ -27,11 +34,15 @@ class ThemeManager {
 
     updateDocument() {
         if (!browser) return;
+        document.documentElement.classList.remove('dark', 'monochrome');
+        
         if (this.current === 'dark') {
             document.documentElement.classList.add('dark');
             document.documentElement.style.colorScheme = 'dark';
+        } else if (this.current === 'monochrome') {
+            document.documentElement.classList.add('monochrome');
+            document.documentElement.style.colorScheme = 'light';
         } else {
-            document.documentElement.classList.remove('dark');
             document.documentElement.style.colorScheme = 'light';
         }
     }

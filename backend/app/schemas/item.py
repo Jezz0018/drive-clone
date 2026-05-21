@@ -19,6 +19,7 @@ class ItemUpdate(BaseModel):
     name: Optional[str] = None
     parent_id: Optional[UUID] = None
     is_starred: Optional[bool] = None
+    is_pinned: Optional[bool] = None
     is_trashed: Optional[bool] = None
     is_archived: Optional[bool] = None
     category: Optional[str] = None
@@ -30,6 +31,7 @@ class Item(ItemBase):
     size: Optional[int] = None
     mime_type: Optional[str] = None
     is_starred: bool
+    is_pinned: Optional[bool] = False
     is_trashed: bool
     trashed_at: Optional[datetime] = None
     is_archived: bool = False

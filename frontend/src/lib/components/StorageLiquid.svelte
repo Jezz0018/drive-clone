@@ -7,19 +7,19 @@
     let liquidHeight = $derived(100 - percentage);
 </script>
 
-<div class="relative w-full h-32 bg-slate-50 dark:bg-[#020617]/50 rounded-[28px] border border-slate-200/50 dark:border-slate-800/50 overflow-hidden group">
+<div class="relative w-full h-32 bg-slate-50 dark:bg-[#020617]/50 monochrome:bg-black rounded-[28px] border border-slate-200/50 dark:border-slate-800/50 monochrome:border-white/10 overflow-hidden group">
     <!-- Liquid Container -->
     <div 
-        class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-indigo-600 to-indigo-500 dark:from-indigo-700 dark:to-indigo-500 transition-all duration-1000 ease-in-out"
+        class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-indigo-600 to-indigo-500 dark:from-indigo-700 dark:to-indigo-500 monochrome:from-white monochrome:to-gray-300 transition-all duration-1000 ease-in-out"
         style="height: {percentage}%"
     >
         <!-- Wave Animation -->
-        <div class="absolute -top-4 left-0 w-[200%] h-8 opacity-50 fill-indigo-500 animate-wave-slow">
+        <div class="absolute -top-4 left-0 w-[200%] h-8 opacity-50 fill-indigo-500 monochrome:fill-white animate-wave-slow">
             <svg viewBox="0 0 1000 100" preserveAspectRatio="none" class="w-full h-full">
                 <path d="M0,50 C150,100 350,0 500,50 C650,100 850,0 1000,50 L1000,100 L0,100 Z" />
             </svg>
         </div>
-        <div class="absolute -top-3 left-0 w-[200%] h-8 opacity-30 fill-white animate-wave-fast translate-x-[-25%]">
+        <div class="absolute -top-3 left-0 w-[200%] h-8 opacity-30 dark:opacity-20 monochrome:opacity-30 fill-white monochrome:fill-black animate-wave-fast translate-x-[-25%]">
             <svg viewBox="0 0 1000 100" preserveAspectRatio="none" class="w-full h-full">
                 <path d="M0,50 C150,100 350,0 500,50 C650,100 850,0 1000,50 L1000,100 L0,100 Z" />
             </svg>

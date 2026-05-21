@@ -10,6 +10,6 @@
     <Header onSearch={(q: string) => explorer?.handleSearch(q)} />
     <div class="flex-1 flex overflow-hidden">
         <Sidebar activeView="archive" />
-        <FileExplorer bind:this={explorer} title="Archived Files" isArchived={true} />
+        <FileExplorer bind:this={explorer} title="Archive" isArchived={true} />
     </div>
 </div>

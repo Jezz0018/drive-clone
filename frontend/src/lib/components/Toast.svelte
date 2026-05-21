@@ -14,9 +14,9 @@
             out:fade={{ duration: 200 }}
             class={cn(
                 "flex items-center justify-between p-4 rounded-2xl shadow-xl border backdrop-blur-md",
-                toast.type === 'success' && "bg-emerald-50/90 border-emerald-100 text-emerald-800 dark:bg-emerald-950/90 dark:border-emerald-900 dark:text-emerald-300",
-                toast.type === 'error' && "bg-rose-50/90 border-rose-100 text-rose-800 dark:bg-rose-950/90 dark:border-rose-900 dark:text-rose-300",
-                toast.type === 'info' && "bg-indigo-50/90 border-indigo-100 text-indigo-800 dark:bg-indigo-950/90 dark:border-indigo-900 dark:text-indigo-300"
+                toast.type === 'success' && "bg-emerald-50/90 border-emerald-100 text-emerald-800 dark:bg-emerald-950/90 dark:border-emerald-900 dark:text-emerald-300 monochrome:bg-black monochrome:border-white/20 monochrome:text-white",
+                toast.type === 'error' && "bg-rose-50/90 border-rose-100 text-rose-800 dark:bg-rose-950/90 dark:border-rose-900 dark:text-rose-300 monochrome:bg-black monochrome:border-white/20 monochrome:text-white",
+                toast.type === 'info' && "bg-indigo-50/90 border-indigo-100 text-indigo-800 dark:bg-indigo-950/90 dark:border-indigo-900 dark:text-indigo-300 monochrome:bg-black monochrome:border-white/20 monochrome:text-white"
             )}
         >
             <div class="flex items-center space-x-3">
@@ -29,7 +29,10 @@
                 {/if}
                 <p class="text-sm font-semibold">{toast.message}</p>
             </div>
-            <button onclick={() => toasts.remove(toast.id)} class="p-1 hover:bg-black/5 rounded-lg transition-colors">
+            <button 
+                onclick={() => toasts.remove(toast.id)} 
+                class="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all hover:rotate-90 active:scale-75"
+            >
                 <X class="w-4 h-4" />
             </button>
         </div>

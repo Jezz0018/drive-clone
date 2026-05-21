@@ -18,6 +18,7 @@
 }
 
 @variant dark (&:where(.dark, .dark *));
+@variant monochrome (&:where(.monochrome, .monochrome *));
 
 @layer base {
   :root {
@@ -36,10 +37,45 @@
     --border-main: #1e293b;
   }
 
+  :root.monochrome {
+    color-scheme: dark;
+    --bg-main: #000000;
+    --surface-main: #0a0a0a; /* near black */
+    --text-main: #ffffff;
+    --border-main: #ffffff;
+  }
+
   html, body {
     @apply transition-colors duration-500 bg-[var(--bg-main)] text-[var(--text-main)];
     height: 100%;
     margin: 0;
+  }
+
+  button, a {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Global Hover Utilities */
+  .hover-lift {
+    @apply hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .hover-glow {
+    @apply hover:shadow-2xl hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 monochrome:hover:shadow-white/10;
+  }
+
+  .icon-bounce {
+    @apply group-hover:scale-110 group-active:scale-90 transition-transform duration-300;
+  }
+
+  .group:hover .icon-bounce,
+  a:hover .icon-bounce,
+  button:hover .icon-bounce {
+    animation: micro-bounce 1s ease-in-out infinite;
+  }
+
+  .icon-rotate {
+    @apply group-hover:rotate-180 transition-transform duration-700 ease-in-out;
   }
 
   /* Custom Scrollbar for modern look */
@@ -53,21 +89,21 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors;
+    @apply bg-slate-300 dark:bg-slate-700 monochrome:bg-black rounded-full hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors;
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50;
+    @apply bg-white/70 dark:bg-slate-900/70 monochrome:bg-white backdrop-blur-md border border-white/20 dark:border-slate-800/50 monochrome:border-black;
   }
   
   .card-elevated {
-    @apply bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 transition-all duration-300;
+    @apply bg-white dark:bg-slate-800/50 monochrome:bg-white border border-slate-100 dark:border-slate-700/50 monochrome:border-black shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 transition-all duration-300;
   }
 
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl px-6 py-3 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all active:scale-95;
+    @apply bg-indigo-600 dark:bg-indigo-600 monochrome:bg-black hover:bg-indigo-700 dark:hover:bg-indigo-700 monochrome:hover:bg-gray-800 text-white font-bold rounded-2xl px-6 py-3 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all active:scale-95;
   }
 }
 
@@ -82,37 +118,23 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+@keyframes micro-bounce {
+  0%, 100% { transform: scale(1.1) translateY(0); }
+  50% { transform: scale(1.1) translateY(-2px); }
 }
 
-.animate-slide-up {
-  animation: slideUp 0.5s ease-out forwards;
+@keyframes bell-shake {
+  0%, 100% { transform: rotate(0); }
+  20%, 60% { transform: rotate(15deg); }
+  40%, 80% { transform: rotate(-15deg); }
 }
 
-@layer components {
-  .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50;
-  }
-  
-  .card-elevated {
-    @apply bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 transition-all duration-300;
-  }
-
-  .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl px-6 py-3 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all active:scale-95;
-  }
+.bell-shake {
+  @apply transition-transform duration-300;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+button:hover .bell-shake {
+  animation: bell-shake 0.5s ease-in-out;
 }
 
 .animate-fade-in {

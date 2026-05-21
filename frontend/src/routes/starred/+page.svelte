@@ -10,6 +10,6 @@
     <Header onSearch={(q: string) => explorer?.handleSearch(q)} />
     <div class="flex-1 flex overflow-hidden">
         <Sidebar activeView="starred" />
-        <FileExplorer bind:this={explorer} title="Starred" isStarred={true} />
+        <FileExplorer bind:this={explorer} title="Favorites" isStarred={true} />
     </div>
 </div>

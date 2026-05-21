@@ -53,6 +53,7 @@
         size?: number;
         mime_type?: string;
         is_starred: boolean;
+        is_pinned: boolean;
         is_trashed: boolean;
         is_archived: boolean;
         category?: string | null;
@@ -70,9 +71,10 @@
         isRecent = false,
         isArchived = false,
         category = undefined,
+        sharedWithMe = false,
         mimeType = undefined,
         mimeFilter = undefined
-        } from $props<{
+    } = $props<{
         title?: string;
         isStarred?: boolean;
         isTrashed?: boolean;
@@ -82,7 +84,7 @@
         sharedWithMe?: boolean;
         mimeType?: string;
         mimeFilter?: string;
-        }>();
+    }>();
 
         // UI State
         let items = $state<Item[]>([]);
@@ -186,6 +188,7 @@
             const newStatus = !item.is_pinned;
             await api.patch(`/items/${item.id}/`, { is_pinned: newStatus });
             items = items.map(i => i.id === item.id ? { ...i, is_pinned: newStatus } : i);
+            ui.update(s => ({ ...s, sidebarRefreshCounter: s.sidebarRefreshCounter + 1 }));
             toasts.success(newStatus ? 'Pinned to sidebar' : 'Unpinned from sidebar');
         } catch (e) {
             toasts.error('Failed to update pin status.');
@@ -627,13 +630,18 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
-                        {#each items as item (item.id)}
+                        {#each items as item, i (item.id)}
                             {@const Icon = getFileIcon(item)}
-                            <tr class={cn("group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors cursor-pointer", selectedItemIds.has(item.id) && "bg-indigo-50/50 dark:bg-indigo-900/20")} onclick={(e) => item.is_folder ? openFolder(item) : toggleSelection(e, item.id)} ondblclick={() => item.is_folder ? openFolder(item) : (previewItem = item)}>
+                        <tr 
+                            class={cn("group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all duration-300 cursor-pointer hover:translate-x-1", selectedItemIds.has(item.id) && "bg-indigo-50/50 dark:bg-indigo-900/20")} 
+                            onclick={(e) => item.is_folder ? openFolder(item) : toggleSelection(e, item.id)} 
+                            ondblclick={() => item.is_folder ? openFolder(item) : (previewItem = item)}
+                            in:fly={{ y: 10, duration: 300, delay: i * 30 }}
+                        >
                                 <td class="py-5 px-8">
                                     <div class="flex items-center space-x-5">
-                                        <div class={cn("p-3 rounded-2xl relative", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400")}><svelte:component this={Icon} class={cn("w-5 h-5", item.is_folder && "fill-current")} /></div>
-                                        <div class="min-w-0"><span class="font-black text-sm truncate dark:text-white">{item.name}</span></div>
+                                        <div class={cn("p-3 rounded-2xl relative transition-transform duration-300 group-hover:scale-110", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400")}><svelte:component this={Icon} class={cn("w-5 h-5 icon-bounce", item.is_folder && "fill-current")} /></div>
+                                        <div class="min-w-0"><span class="font-black text-sm truncate dark:text-white group-hover:text-indigo-600 transition-colors">{item.name}</span></div>
                                     </div>
                                 </td>
                                 <td class="py-5 px-8 text-xs font-bold text-slate-500 dark:text-slate-400">{new Date(item.updated_at).toLocaleDateString()}</td>
@@ -648,29 +656,30 @@
             </div>
         {:else}
             <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-8" in:fly={{ y: 20, duration: 400 }}>
-                {#each items as item (item.id)}
+                {#each items as item, i (item.id)}
                     {@const Icon = getFileIcon(item)}
                     <div 
                         class={cn(
-                            "group bg-slate-50/50 dark:bg-slate-800/40 p-6 rounded-[40px] border-2 border-transparent transition-all relative cursor-pointer flex flex-col items-center text-center", 
+                            "group bg-slate-50/50 dark:bg-slate-800/40 p-6 rounded-[40px] border-2 border-transparent transition-all relative cursor-pointer flex flex-col items-center text-center hover-lift hover-glow", 
                             selectedItemIds.has(item.id) ? "border-indigo-500 bg-white dark:bg-slate-800 shadow-2xl shadow-indigo-500/10 scale-[1.02]" : "hover:bg-white dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 shadow-sm"
                         )} 
                         onclick={(e) => item.is_folder ? openFolder(item) : toggleSelection(e, item.id)} 
                         ondblclick={() => item.is_folder ? openFolder(item) : (previewItem = item)}
+                        in:fly={{ y: 20, duration: 400, delay: i * 50 }}
                     >
                         <div class="absolute top-4 right-4 z-20 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {#if !item.is_folder}<button onclick={(e) => { e.stopPropagation(); downloadFile(item); }} class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700 transition-all"><Download class="w-4 h-4" /></button>{/if}
                             <button onclick={(e) => { e.stopPropagation(); openThreeDotsMenu(e, item); }} class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700 transition-all"><MoreVertical class="w-4 h-4" /></button>
                         </div>
-                        <div class={cn("w-20 h-20 flex items-center justify-center rounded-[32px] mb-6", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400")}>
-                            <svelte:component this={Icon} class={cn("w-10 h-10 transition-transform duration-500", item.is_folder && "fill-current")} />
+                        <div class={cn("w-20 h-20 flex items-center justify-center rounded-[32px] mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400")}>
+                            <svelte:component this={Icon} class={cn("w-10 h-10 transition-transform duration-500 icon-bounce", item.is_folder && "fill-current")} />
                             {#if item.is_starred}
                                 <div class="absolute top-2 left-2 bg-white dark:bg-slate-900 rounded-xl p-1.5 shadow-lg border border-slate-100 dark:border-slate-800 animate-in zoom-in-50 duration-300">
                                     <Star class="w-4 h-4 text-amber-500 fill-current" />
                                 </div>
                             {/if}
                         </div>
-                        <div class="w-full"><h4 class="font-black text-sm truncate px-1 dark:text-white tracking-tight mb-1">{item.name}</h4><p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.is_folder ? 'Container' : formatSize(item.size)}</p></div>
+                        <div class="w-full"><h4 class="font-black text-sm truncate px-1 dark:text-white tracking-tight mb-1 group-hover:text-indigo-600 transition-colors">{item.name}</h4><p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.is_folder ? 'Container' : formatSize(item.size)}</p></div>
                     </div>
                 {/each}
             </div>

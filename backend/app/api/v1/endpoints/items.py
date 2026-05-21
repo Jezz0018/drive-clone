@@ -2,22 +2,23 @@ from typing import Any, List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 from app.api import deps
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.item import Item as ItemSchema, ItemCreate, ItemUpdate, FolderCreate
+from app.models.item_permission import ItemPermission as ItemPermissionModel
+from app.schemas.item_permission import ItemPermission as ItemPermissionSchema, ItemPermissionCreate, ItemPermissionUpdate
+from app.models.activity import Activity
+from app.schemas.activity import Activity as ActivitySchema
 import uuid
 import os
 import aiofiles
 from app.core.config import settings
 from datetime import datetime
 import secrets
-
 from fastapi.responses import FileResponse
-
-from sqlalchemy import select, and_, or_, func
 
 router = APIRouter()
 
@@ -27,7 +28,6 @@ async def get_storage_usage(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)
 ) -> Any:
-    # Fetch all files owned by user to sum them manually (more robust for debugging)
     result = await db.execute(
         select(Item.size, Item.category)
         .filter(Item.owner_id == current_user.id, Item.is_folder == False)
@@ -110,7 +110,6 @@ async def toggle_item_share(
     
     if db_obj.is_public:
         db_obj.is_public = False
-        # We can keep the token or clear it, clearing it makes it "more secure" if re-shared
         db_obj.sharing_token = None
     else:
         db_obj.is_public = True
@@ -143,9 +142,6 @@ async def download_file(
         media_type=db_obj.mime_type
     )
 
-from app.models.item_permission import ItemPermission as ItemPermissionModel
-from app.schemas.item_permission import ItemPermission as ItemPermissionSchema, ItemPermissionCreate, ItemPermissionUpdate
-
 @router.post("/{item_id}/permissions", response_model=ItemPermissionSchema)
 async def add_item_permission(
     *,
@@ -154,13 +150,11 @@ async def add_item_permission(
     item_id: uuid.UUID,
     permission_in: ItemPermissionCreate
 ) -> Any:
-    # Check if user owns the item
     result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
     item = result.scalars().first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found or access denied")
     
-    # Find user by email
     result = await db.execute(select(User).filter(User.email == permission_in.user_email))
     target_user = result.scalars().first()
     if not target_user:
@@ -169,7 +163,6 @@ async def add_item_permission(
     if target_user.id == current_user.id:
         raise HTTPException(status_code=400, detail="You cannot share an item with yourself")
 
-    # Check if permission already exists
     result = await db.execute(select(ItemPermissionModel).filter(
         ItemPermissionModel.item_id == item_id, 
         ItemPermissionModel.user_id == target_user.id
@@ -187,7 +180,6 @@ async def add_item_permission(
         db.add(db_obj)
         
     await db.commit()
-    # For response, we need the email
     perm = existing_perm if existing_perm else db_obj
     await db.refresh(perm)
     setattr(perm, 'user_email', target_user.email)
@@ -201,7 +193,6 @@ async def delete_item_permission(
     item_id: uuid.UUID,
     permission_id: uuid.UUID
 ) -> Any:
-    # Only owner can remove permissions
     result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
     item = result.scalars().first()
     if not item:
@@ -223,7 +214,6 @@ async def list_item_permissions(
     current_user: User = Depends(deps.get_current_user),
     item_id: uuid.UUID
 ) -> Any:
-    # Only owner can see permissions list
     result = await db.execute(select(Item).filter(Item.id == item_id, Item.owner_id == current_user.id))
     item = result.scalars().first()
     if not item:
@@ -261,7 +251,6 @@ async def read_items(
     sort_order: str = "asc"
 ) -> Any:
     if shared_with_me:
-        # Items shared with current user
         query = (
             select(Item)
             .options(selectinload(Item.permissions), selectinload(Item.category_obj))
@@ -270,7 +259,6 @@ async def read_items(
             .filter(Item.is_trashed == False)
         )
     else:
-        # User's own items
         query = select(Item).options(selectinload(Item.permissions), selectinload(Item.category_obj)).filter(Item.owner_id == current_user.id)
         
         if is_trashed:
@@ -279,9 +267,9 @@ async def read_items(
             query = query.filter(Item.is_trashed == False)
             query = query.filter(Item.is_archived == is_archived)
             
-            if parent_id:
+            if parent_id and not is_pinned and not is_starred and not search and not mime_type and not category:
                 query = query.filter(Item.parent_id == parent_id)
-            elif not search and is_starred is None and category is None and not category_id:
+            elif not search and is_starred is None and is_pinned is None and category is None and not category_id and not mime_type and not is_archived:
                 query = query.filter(Item.parent_id == None)
                 
     if is_starred is not None:
@@ -292,16 +280,25 @@ async def read_items(
     elif category:
         query = query.filter(Item.category == category)
         
+    if is_pinned is not None:
+        query = query.filter(Item.is_pinned == is_pinned)
+        
+    if mime_type:
+        prefixes = mime_type.split(',')
+        if len(prefixes) > 1:
+            query = query.filter(or_(*[Item.mime_type.ilike(f"{p}%") for p in prefixes]))
+        else:
+            query = query.filter(Item.mime_type.ilike(f"{mime_type}%"))
+            
     if search:
         query = query.filter(Item.name.ilike(f"%{search}%"))
         
-    # Sort Logic
     order_func = Item.name.asc()
     if sort_by == "size":
         order_func = Item.size.asc() if sort_order == "asc" else Item.size.desc()
     elif sort_by == "date":
         order_func = Item.updated_at.asc() if sort_order == "asc" else Item.updated_at.desc()
-    else: # name
+    else:
         order_func = Item.name.asc() if sort_order == "asc" else Item.name.desc()
 
     query = query.order_by(Item.is_folder.desc(), order_func)
@@ -309,20 +306,18 @@ async def read_items(
     result = await db.execute(query)
     return result.scalars().all()
 
-from app.models.activity import Activity
-from app.schemas.activity import Activity as ActivitySchema
-
 @router.get("/activity", response_model=List[ActivitySchema])
 async def get_activity_feed(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user)
+    current_user: User = Depends(deps.get_current_user),
+    limit: int = 5
 ) -> Any:
     result = await db.execute(
         select(Activity)
         .filter(Activity.user_id == current_user.id)
         .order_by(Activity.created_at.desc())
-        .limit(5)
+        .limit(limit)
     )
     return result.scalars().all()
 
@@ -350,7 +345,6 @@ async def create_folder(
     await log_activity(db, current_user.id, "create_folder", folder_in.name)
     await db.commit()
     
-    # Eagerly load relationships for response validation
     result = await db.execute(
         select(Item)
         .options(selectinload(Item.permissions), selectinload(Item.category_obj))
@@ -373,7 +367,6 @@ async def upload_file(
     saved_filename = f"{file_id}{file_ext}"
     file_path = os.path.join(settings.UPLOAD_DIR, saved_filename)
     
-    # Save file to disk
     async with aiofiles.open(file_path, 'wb') as out_file:
         content = await file.read()
         await out_file.write(content)
@@ -395,7 +388,6 @@ async def upload_file(
     await log_activity(db, current_user.id, "upload", file.filename, file_id)
     await db.commit()
     
-    # Eagerly load relationships for response validation
     result = await db.execute(
         select(Item)
         .options(selectinload(Item.permissions), selectinload(Item.category_obj))
@@ -431,6 +423,18 @@ async def update_item(
         setattr(db_obj, field, update_data[field])
         
     db.add(db_obj)
+    
+    action = "update"
+    if "is_starred" in update_data:
+        action = "star" if update_data["is_starred"] else "unstar"
+    elif "is_archived" in update_data:
+        action = "archive" if update_data["is_archived"] else "unarchive"
+    elif "is_pinned" in update_data:
+        action = "pin" if update_data["is_pinned"] else "unpin"
+    elif "is_trashed" in update_data:
+        action = "trash" if update_data["is_trashed"] else "restore"
+        
+    await log_activity(db, current_user.id, action, db_obj.name, db_obj.id)
     await db.commit()
     await db.refresh(db_obj)
     return db_obj
@@ -451,9 +455,7 @@ async def delete_item(
     if not db_obj:
         raise HTTPException(status_code=404, detail="Item not found")
     
-    # Permanent delete if already in trash, otherwise move to trash
     if db_obj.is_trashed:
-        # Delete physical file if it's a file
         if not db_obj.is_folder and db_obj.file_path:
             file_path = os.path.join(settings.UPLOAD_DIR, db_obj.file_path)
             if os.path.exists(file_path):
@@ -466,6 +468,7 @@ async def delete_item(
         db_obj.is_trashed = True
         db_obj.trashed_at = datetime.utcnow()
         db.add(db_obj)
+        await log_activity(db, current_user.id, "delete", db_obj.name, db_obj.id)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
@@ -476,13 +479,11 @@ async def empty_trash(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)
 ) -> Any:
-    # Get all items in trash for this user
     result = await db.execute(select(Item).filter(Item.owner_id == current_user.id, Item.is_trashed == True))
     items_to_delete = result.scalars().all()
     
     count = 0
     for item in items_to_delete:
-        # Delete physical file if it's a file
         if not item.is_folder and item.file_path:
             file_path = os.path.join(settings.UPLOAD_DIR, item.file_path)
             if os.path.exists(file_path):

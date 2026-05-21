@@ -7,7 +7,7 @@ async def check():
         try:
             res = await db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'items'"))
             columns = [r[0] for r in res.all()]
-            print(f"ITEMS COLUMNS: {columns}")
+            print(f"COLUMNS: {columns}")
         except Exception as e:
             print(f"ERROR: {e}")
 

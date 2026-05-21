@@ -9,7 +9,8 @@ export const storageUsage = writable({ used: 0, limit: 10 * 1024 * 1024 * 1024 }
 export const ui = writable({
     showUploadModal: false,
     uploadType: 'file' as 'file' | 'folder',
-    mimeFilter: undefined as string | undefined
+    mimeFilter: undefined as string | undefined,
+    sidebarRefreshCounter: 0
 });
 
 token.subscribe((value) => {
