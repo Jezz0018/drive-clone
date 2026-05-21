@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Circle, Search as SearchIcon, Database, ShieldCheck, HelpCircle, Home } from 'lucide-svelte';
+    import { Search, Settings, Grid, List, LogOut, Cloud, Bell, User, Sun, Moon, Aperture, Search as SearchIcon, Database, ShieldCheck, HelpCircle, Home } from 'lucide-svelte';
     import { token, user } from '$lib/stores';
     import { goto } from '$app/navigation';
     import { cn } from '$lib/utils';
@@ -49,23 +49,22 @@
     <!-- Home Button -->
     <button 
         onclick={() => goto('/')}
-        class="ml-2 p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-slate-500 dark:text-slate-400 monochrome:text-white/60 hover:text-indigo-600 dark:hover:text-indigo-400 monochrome:hover:text-white rounded-2xl transition-all hover:scale-110 active:scale-90"
+        class="ml-2 p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-slate-500 dark:text-slate-400 monochrome:text-white/60 hover:text-indigo-600 dark:hover:text-indigo-400 monochrome:hover:text-white rounded-2xl transition-all hover-lift group active:scale-90"
         title="Back to Home"
     >
-        <Home class="w-5 h-5" />
+        <Home class="w-5 h-5 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
     </button>
 
     <!-- Search Bar -->
     <div class="flex-1 max-w-2xl mx-12 hidden md:block">
         <div class="relative group">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <SearchIcon class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 monochrome:group-focus-within:text-white transition-colors" />
+                <SearchIcon class="h-5 w-5 text-slate-400 group-hover:text-indigo-400 dark:group-hover:text-indigo-300 monochrome:group-hover:text-white/80 group-hover:scale-110 group-hover:-rotate-12 group-focus-within:text-indigo-500 monochrome:group-focus-within:text-white group-focus-within:scale-125 group-focus-within:rotate-0 transition-all duration-500" />
             </div>
             <input 
                 type="text" 
                 placeholder="Search your secure drive..." 
-
-                class="block w-full pl-12 pr-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 monochrome:bg-white/5 border-2 border-transparent rounded-2xl focus:bg-white dark:focus:bg-slate-800 monochrome:focus:bg-white/10 focus:border-indigo-200 dark:focus:border-indigo-900/50 monochrome:focus:border-white focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-900/10 monochrome:focus:ring-white/5 transition-all sm:text-sm outline-none text-slate-700 dark:text-slate-200 monochrome:text-white"
+                class="block w-full pl-12 pr-4 py-3 bg-slate-100/50 dark:bg-slate-800/50 monochrome:bg-white/5 border-2 border-transparent rounded-2xl hover:bg-slate-200/50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 hover:border-slate-200 dark:hover:border-slate-700 monochrome:hover:border-white/20 hover:scale-[1.01] focus:bg-white dark:focus:bg-slate-800 monochrome:focus:bg-white/10 focus:border-indigo-200 dark:focus:border-indigo-900/50 monochrome:focus:border-white focus:ring-8 focus:ring-indigo-50/50 dark:focus:ring-indigo-900/20 monochrome:focus:ring-white/5 transition-all duration-500 sm:text-sm outline-none text-slate-700 dark:text-slate-200 monochrome:text-white focus:scale-[1.02] shadow-sm hover:shadow-md focus:shadow-2xl focus:shadow-indigo-500/10 monochrome:focus:shadow-none"
                 oninput={(e) => onSearch(e.currentTarget.value)}
             />
         </div>
@@ -80,11 +79,11 @@
             title="Toggle Theme"
         >
             {#if theme.current === 'light'}
-                <div in:fade><Moon class="w-5 h-5" /></div>
-            {:else if theme.current === 'dark'}
                 <div in:fade><Sun class="w-5 h-5" /></div>
+            {:else if theme.current === 'dark'}
+                <div in:fade><Moon class="w-5 h-5" /></div>
             {:else}
-                <div in:fade><Circle class="w-5 h-5 fill-current" /></div>
+                <div in:fade><Aperture class="w-5 h-5" /></div>
             {/if}
         </button>
 
@@ -115,7 +114,7 @@
 
                     <button 
                         onclick={() => { showSettingsMenu = false; goto('/profile'); }}
-                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
                     >
                         <User class="w-4 h-4 text-indigo-500 monochrome:text-white" />
                         <span>Profile Settings</span>
@@ -123,7 +122,7 @@
 
                     <button 
                         onclick={() => { showSettingsMenu = false; goto('/storage'); }}
-                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
                     >
                         <Database class="w-4 h-4 text-amber-500 monochrome:text-white" />
                         <span>Storage Settings</span>
@@ -131,7 +130,7 @@
 
                     <button 
                         onclick={() => { showSettingsMenu = false; goto('/security'); }}
-                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
                     >
                         <ShieldCheck class="w-4 h-4 text-emerald-500 monochrome:text-white" />
                         <span>Security & Privacy</span>
@@ -141,7 +140,7 @@
 
                     <button 
                         onclick={() => { showSettingsMenu = false; toasts.info('System manual initializing...'); }}
-                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
+                        class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 monochrome:hover:bg-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 monochrome:text-white transition-colors"
                     >
                         <HelpCircle class="w-4 h-4 text-slate-400 monochrome:text-white/60" />
                         <span>Help & Documentation</span>

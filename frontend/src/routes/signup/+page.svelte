@@ -120,7 +120,7 @@
                 <div in:fade>
                     <div class="mb-8 text-center lg:text-left">
                         <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Register User</h2>
-                        <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Join the secure cloud network</p>
+                        <p class="text-slate-500 dark:text-slate-400 font-bold text-sm mt-1">Join the secure cloud network</p>
                     </div>
 
                     <form class="space-y-5" onsubmit={handleSubmit}>
@@ -214,7 +214,7 @@
                             <MailCheck class="w-8 h-8 text-emerald-600" />
                         </div>
                         <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Check your email</h2>
-                        <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-2 px-4">
+                        <p class="text-slate-500 dark:text-slate-400 font-bold text-sm mt-2 px-4">
                             We've sent a 6-digit verification code to <span class="text-indigo-600 font-bold">{email}</span>
                         </p>
                     </div>

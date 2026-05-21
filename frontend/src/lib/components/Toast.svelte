@@ -27,7 +27,7 @@
                 {:else}
                     <Info class="w-5 h-5" />
                 {/if}
-                <p class="text-sm font-semibold">{toast.message}</p>
+                <p class="text-sm font-bold">{toast.message}</p>
             </div>
             <button 
                 onclick={() => toasts.remove(toast.id)} 

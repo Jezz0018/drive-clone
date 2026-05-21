@@ -171,7 +171,7 @@
                             <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-slate-500">ME</div>
                             <div class="flex flex-col">
                                 <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Owner</span>
-                                <span class="text-[10px] text-slate-400 font-medium tracking-tight">Full access</span>
+                                <span class="text-[10px] text-slate-400 font-bold tracking-tight">Full access</span>
                             </div>
                         </div>
                     </div>
@@ -181,7 +181,7 @@
                                 <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-[10px] font-black uppercase text-indigo-600 transition-transform group-hover:scale-110">{perm.user_email[0]}</div>
                                 <div class="flex flex-col">
                                     <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[180px]">{perm.user_email}</span>
-                                    <span class="text-[10px] text-slate-400 font-medium capitalize tracking-tight">{perm.level}</span>
+                                    <span class="text-[10px] text-slate-400 font-bold capitalize tracking-tight">{perm.level}</span>
                                 </div>
                             </div>
                             <button onclick={() => removePermission(perm.id)} class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100 active:scale-75">
@@ -207,7 +207,7 @@
                         </div>
                         <div>
                             <span class="text-xs font-bold text-slate-700 dark:text-slate-200">General Access</span>
-                            <p class="text-[10px] text-slate-400 font-medium tracking-tight">
+                            <p class="text-[10px] text-slate-400 font-bold tracking-tight">
                                 {publicEnabled ? 'Anyone with the link can view' : 'Restricted to invited people'}
                             </p>
                         </div>

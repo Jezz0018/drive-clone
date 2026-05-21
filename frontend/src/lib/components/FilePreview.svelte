@@ -162,7 +162,7 @@
                         <FileIcon class="w-12 h-12 text-indigo-200 monochrome:text-black" />
                     </div>
                     <h4 class="text-xl font-black text-slate-900 dark:text-white monochrome:text-black mb-2 tracking-tight">Preview Unavailable</h4>
-                    <p class="text-slate-500 dark:text-slate-400 monochrome:text-gray-500 text-sm font-medium mb-8 max-w-xs mx-auto">This file type cannot be previewed directly in the browser.</p>
+                    <p class="text-slate-500 dark:text-slate-400 monochrome:text-gray-500 text-sm font-bold mb-8 max-w-xs mx-auto">This file type cannot be previewed directly in the browser.</p>
                     <button 
                         onclick={ondownload}
                         class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 monochrome:bg-black monochrome:hover:bg-gray-800 text-white font-black rounded-[24px] shadow-xl shadow-indigo-500/20 monochrome:shadow-none transition-all active:scale-95 flex items-center space-x-3 mx-auto"

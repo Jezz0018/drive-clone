@@ -86,7 +86,7 @@
                 <Shield class="w-10 h-10 text-rose-600 dark:text-rose-400" />
             </div>
             <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Access Denied</h1>
-            <p class="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-10">{error}</p>
+            <p class="text-slate-500 dark:text-slate-400 font-bold leading-relaxed mb-10">{error}</p>
             <a href="/" class="inline-flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest text-xs hover:underline">
                 <span>Go to Drive Home</span>
                 <ArrowRight class="w-4 h-4" />
@@ -145,7 +145,7 @@
 
             <!-- Promotion Footer -->
             <div class="mt-12 text-center">
-                <p class="text-slate-400 dark:text-slate-500 text-sm font-medium mb-4">Powered by</p>
+                <p class="text-slate-400 dark:text-slate-500 text-sm font-bold mb-4">Powered by</p>
                 <div class="flex items-center justify-center space-x-2">
                     <div class="bg-indigo-600 p-2 rounded-xl">
                         <HardDrive class="w-5 h-5 text-white" />

@@ -11,10 +11,33 @@
     import api from '$lib/api';
 
     let showPasswordModal = $state(false);
+    let showEditProfileModal = $state(false);
     let oldPassword = $state('');
     let newPassword = $state('');
     let confirmPassword = $state('');
+    let newFullName = $state($user?.full_name || '');
     let updating = $state(false);
+
+    async function handleUpdateProfile() {
+        if (!newFullName.trim()) {
+            toasts.error('Full name is required');
+            return;
+        }
+
+        updating = true;
+        try {
+            const response = await api.patch('/auth/me', {
+                full_name: newFullName
+            });
+            user.set(response.data);
+            toasts.success('Profile updated successfully');
+            showEditProfileModal = false;
+        } catch (e: any) {
+            toasts.error(e.response?.data?.detail || 'Failed to update profile');
+        } finally {
+            updating = false;
+        }
+    }
 
     async function handleUpdatePassword() {
         if (newPassword !== confirmPassword) {
@@ -61,25 +84,25 @@
     <div class="flex-1 flex overflow-hidden">
         <Sidebar activeView="profile" />
         
-        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#0f172a] p-8 custom-scrollbar">
+        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#0f172a] monochrome:bg-black p-8 custom-scrollbar">
             <div class="max-w-4xl mx-auto space-y-8" in:fly={{ y: 20, duration: 600 }}>
                 <!-- Page Header -->
                 <div>
-                    <div class="flex items-center space-x-2 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
+                    <div class="flex items-center space-x-2 text-xs font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-[0.2em] mb-3">
                         <User class="w-3.5 h-3.5" />
                         <span>Identity Hub</span>
                     </div>
-                    <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">Profile Settings</h1>
+                    <h1 class="text-4xl font-black text-slate-900 dark:text-white monochrome:text-white tracking-tighter">Profile Settings</h1>
                 </div>
 
                 <!-- Profile Card -->
-                <div class="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-200/50 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="bg-white dark:bg-slate-900 monochrome:bg-black rounded-[40px] border border-slate-200/50 dark:border-slate-800 monochrome:border-white/20 shadow-sm overflow-hidden">
                     <!-- Banner -->
-                    <div class="h-32 bg-indigo-600 relative">
+                    <div class="h-32 bg-indigo-600 monochrome:bg-white relative">
                         <div class="absolute -bottom-12 left-10">
-                            <div class="w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 p-2 shadow-xl">
-                                <div class="w-full h-full rounded-[24px] bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                                    <User class="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+                            <div class="w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 monochrome:bg-black p-2 shadow-xl">
+                                <div class="w-full h-full rounded-[24px] bg-indigo-100 dark:bg-indigo-900/40 monochrome:bg-white/10 flex items-center justify-center">
+                                    <User class="w-10 h-10 text-indigo-600 dark:text-indigo-400 monochrome:text-white" />
                                 </div>
                             </div>
                         </div>
@@ -88,13 +111,20 @@
                     <div class="pt-16 pb-10 px-10">
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
-                                <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{$user?.full_name || 'Anonymous User'}</h2>
-                                <p class="text-slate-500 dark:text-slate-400 font-medium">Standard Active User</p>
+                                <h2 class="text-2xl font-black text-slate-900 dark:text-white monochrome:text-white tracking-tight">{$user?.full_name || 'Anonymous User'}</h2>
+                                <p class="text-slate-500 dark:text-slate-400 monochrome:text-white/40 font-bold">Standard Active User</p>
                             </div>
                             <div class="flex items-center space-x-3">
                                 <button 
+                                    onclick={() => { newFullName = $user?.full_name || ''; showEditProfileModal = true; }}
+                                    class="flex items-center space-x-2 px-6 py-3 bg-indigo-50 dark:bg-indigo-900/20 monochrome:bg-white/10 text-indigo-600 dark:text-indigo-400 monochrome:text-white font-bold rounded-2xl hover:bg-indigo-100 monochrome:hover:bg-white/20 transition-all active:scale-95"
+                                >
+                                    <SettingsIcon class="w-4 h-4" />
+                                    <span>Edit Profile</span>
+                                </button>
+                                <button 
                                     onclick={handleLogout}
-                                    class="flex items-center space-x-2 px-6 py-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-bold rounded-2xl hover:bg-rose-100 transition-all active:scale-95"
+                                    class="flex items-center space-x-2 px-6 py-3 bg-rose-50 dark:bg-rose-900/20 monochrome:bg-white/10 text-rose-600 dark:text-rose-400 monochrome:text-white font-bold rounded-2xl hover:bg-rose-100 monochrome:hover:bg-white/20 transition-all active:scale-95"
                                 >
                                     <LogOut class="w-4 h-4" />
                                     <span>Sign Out</span>
@@ -105,63 +135,63 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
                             <!-- Info Section -->
                             <div class="space-y-6">
-                                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">Account Information</h3>
+                                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 monochrome:border-white/10 pb-2">Account Information</h3>
                                 
                                 <div class="flex items-center space-x-4 group">
-                                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 monochrome:bg-white/5 text-slate-400 group-hover:text-indigo-600 monochrome:group-hover:text-white transition-colors">
                                         <Mail class="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Email Address</p>
-                                        <p class="font-bold text-slate-700 dark:text-slate-200">{$user?.email}</p>
+                                        <p class="text-[10px] font-black text-slate-400 monochrome:text-white/40 uppercase tracking-tighter">Email Address</p>
+                                        <p class="font-bold text-slate-700 dark:text-slate-200 monochrome:text-white">{$user?.email}</p>
                                     </div>
                                 </div>
 
                                 <div class="flex items-center space-x-4 group">
-                                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 monochrome:bg-white/5 text-slate-400 group-hover:text-indigo-600 monochrome:group-hover:text-white transition-colors">
                                         <Phone class="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Phone Number</p>
-                                        <p class="font-bold text-slate-700 dark:text-slate-200">{$user?.phone_number || 'Not provided'}</p>
+                                        <p class="text-[10px] font-black text-slate-400 monochrome:text-white/40 uppercase tracking-tighter">Phone Number</p>
+                                        <p class="font-bold text-slate-700 dark:text-slate-200 monochrome:text-white">{$user?.phone_number || 'Not provided'}</p>
                                     </div>
                                 </div>
 
                                 <div class="flex items-center space-x-4 group">
-                                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 monochrome:bg-white/5 text-slate-400 group-hover:text-indigo-600 monochrome:group-hover:text-white transition-colors">
                                         <Calendar class="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Member Since</p>
-                                        <p class="font-bold text-slate-700 dark:text-slate-200">{new Date($user?.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</p>
+                                        <p class="text-[10px] font-black text-slate-400 monochrome:text-white/40 uppercase tracking-tighter">Member Since</p>
+                                        <p class="font-bold text-slate-700 dark:text-slate-200 monochrome:text-white">{new Date($user?.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</p>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Quick Actions Section -->
                             <div class="space-y-6">
-                                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">Quick Actions</h3>
+                                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 monochrome:border-white/10 pb-2">Quick Actions</h3>
                                 
                                 <button 
-                                    class="w-full flex items-center justify-between p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 transition-all group"
+                                    class="w-full flex items-center justify-between p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 monochrome:bg-white/5 hover:bg-slate-100 monochrome:hover:bg-white/10 transition-all group"
                                     onclick={() => showPasswordModal = true}
                                 >
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Change Password</span>
+                                        <div class="w-2 h-2 rounded-full bg-indigo-500 monochrome:bg-white"></div>
+                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200 monochrome:text-white">Change Password</span>
                                     </div>
-                                    <ChevronRight class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight class="w-4 h-4 text-slate-400 monochrome:text-white/40 group-hover:translate-x-1 transition-transform" />
                                 </button>
 
                                 <button 
-                                    class="w-full flex items-center justify-between p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 transition-all group"
+                                    class="w-full flex items-center justify-between p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 monochrome:bg-white/5 hover:bg-slate-100 monochrome:hover:bg-white/10 transition-all group"
                                     onclick={() => goto('/security')}
                                 >
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Security Protocols</span>
+                                        <div class="w-2 h-2 rounded-full bg-emerald-500 monochrome:bg-white"></div>
+                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200 monochrome:text-white">Security Protocols</span>
                                     </div>
-                                    <ChevronRight class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight class="w-4 h-4 text-slate-400 monochrome:text-white/40 group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
                         </div>
@@ -171,16 +201,16 @@
                 <!-- System Stats Footer -->
                 <div class="flex items-center justify-center space-x-8 pt-4">
                     <div class="text-center">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Encrypted</p>
-                        <div class="h-1 w-12 bg-indigo-500 rounded-full mx-auto"></div>
+                        <p class="text-[10px] font-black text-slate-400 monochrome:text-white/40 uppercase tracking-widest mb-1">Encrypted</p>
+                        <div class="h-1 w-12 bg-indigo-500 monochrome:bg-white rounded-full mx-auto"></div>
                     </div>
                     <div class="text-center">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Standard</p>
-                        <div class="h-1 w-12 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto"></div>
+                        <p class="text-[10px] font-black text-slate-400 monochrome:text-white/40 uppercase tracking-widest mb-1">Standard</p>
+                        <div class="h-1 w-12 bg-slate-200 dark:bg-slate-700 monochrome:bg-white/10 rounded-full mx-auto"></div>
                     </div>
                     <div class="text-center">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Syncing</p>
-                        <div class="h-1 w-12 bg-emerald-500 rounded-full mx-auto"></div>
+                        <p class="text-[10px] font-black text-slate-400 monochrome:text-white/40 uppercase tracking-widest mb-1">Syncing</p>
+                        <div class="h-1 w-12 bg-emerald-500 monochrome:bg-white/60 rounded-full mx-auto"></div>
                     </div>
                 </div>
             </div>
@@ -200,7 +230,7 @@
         >
             <div class="mb-8">
                 <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Security Update</h2>
-                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Update your account credentials</p>
+                <p class="text-slate-500 dark:text-slate-400 font-bold text-sm mt-1">Update your account credentials</p>
             </div>
 
             <div class="space-y-6">
@@ -247,6 +277,71 @@
                         class="flex-[2] px-6 py-4 bg-indigo-600 text-white font-bold rounded-[22px] hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none disabled:opacity-50"
                     >
                         {updating ? 'Updating...' : 'Update Password'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
+
+<!-- Edit Profile Modal -->
+{#if showEditProfileModal}
+    <div 
+        class="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-md flex items-center justify-center z-[70] p-6"
+        transition:fade={{ duration: 200 }}
+    >
+        <div 
+            class="bg-white dark:bg-slate-900 monochrome:bg-black rounded-[48px] p-10 w-full max-w-md shadow-2xl border border-white/20 dark:border-slate-800 monochrome:border-white/20 relative overflow-hidden"
+            transition:fly={{ y: 40, duration: 400, easing: quintOut }}
+        >
+            <div class="mb-8">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white monochrome:text-white tracking-tight">Identity Update</h2>
+                <p class="text-slate-500 dark:text-slate-400 monochrome:text-white/40 font-bold text-sm mt-1">Modify your profile signatures</p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Editable: Full Name -->
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest ml-1">Full Identity Name</label>
+                    <input 
+                        bind:value={newFullName} 
+                        type="text" 
+                        placeholder="John Doe" 
+                        class="w-full bg-slate-50 dark:bg-slate-800/50 monochrome:bg-white/5 border-2 border-transparent rounded-[22px] px-6 py-4 text-sm font-bold focus:bg-white dark:focus:bg-slate-800 monochrome:focus:bg-black focus:border-indigo-500/30 monochrome:focus:border-white/20 transition-all outline-none text-slate-900 dark:text-slate-100 monochrome:text-white" 
+                    />
+                </div>
+
+                <!-- Coming Soon: Email -->
+                <div class="space-y-2 opacity-50 relative group">
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest ml-1">Email Node</label>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800/30 monochrome:bg-white/5 border-2 border-transparent rounded-[22px] px-6 py-4 text-sm font-bold text-slate-400 dark:text-slate-500 monochrome:text-white/20 cursor-not-allowed">
+                        {$user?.email}
+                    </div>
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-200 dark:bg-slate-700 monochrome:bg-white/10 text-[8px] font-black uppercase px-2 py-1 rounded-md tracking-tighter">Coming Soon</span>
+                </div>
+
+                <!-- Coming Soon: Phone -->
+                <div class="space-y-2 opacity-50 relative group">
+                    <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest ml-1">Communication Link</label>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800/30 monochrome:bg-white/5 border-2 border-transparent rounded-[22px] px-6 py-4 text-sm font-bold text-slate-400 dark:text-slate-500 monochrome:text-white/20 cursor-not-allowed">
+                        {$user?.phone_number || 'Not Linked'}
+                    </div>
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-200 dark:bg-slate-700 monochrome:bg-white/10 text-[8px] font-black uppercase px-2 py-1 rounded-md tracking-tighter">Coming Soon</span>
+                </div>
+
+                <div class="flex items-center space-x-3 pt-2">
+                    <button 
+                        onclick={() => showEditProfileModal = false}
+                        class="flex-1 px-6 py-4 bg-slate-100 dark:bg-slate-800 monochrome:bg-white/10 text-slate-600 dark:text-slate-400 monochrome:text-white font-bold rounded-[22px] hover:bg-slate-200 monochrome:hover:bg-white/20 transition-all active:scale-95"
+                    >
+                        Abort
+                    </button>
+                    <button 
+                        onclick={handleUpdateProfile}
+                        disabled={updating || !newFullName.trim() || newFullName === $user?.full_name}
+                        class="flex-[2] px-6 py-4 bg-indigo-600 monochrome:bg-white text-white monochrome:text-black font-bold rounded-[22px] hover:bg-indigo-700 monochrome:hover:bg-gray-100 transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none monochrome:shadow-none disabled:opacity-50"
+                    >
+                        {updating ? 'Updating...' : 'Sync Profile'}
                     </button>
                 </div>
             </div>

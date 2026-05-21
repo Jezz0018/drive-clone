@@ -98,7 +98,7 @@
         <div class="bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-2xl p-10 rounded-[40px] border border-white dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none">
             <div class="mb-8">
                 <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Welcome Back</h2>
-                <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Access your secure cloud drive</p>
+                <p class="text-slate-500 dark:text-slate-400 font-bold text-sm mt-1">Access your secure cloud drive</p>
             </div>
 
             <form class="space-y-6" onsubmit={handleSubmit}>

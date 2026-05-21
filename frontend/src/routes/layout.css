@@ -51,8 +51,8 @@
     margin: 0;
   }
 
-  button, a {
-    @apply transition-all duration-300 ease-out;
+  button, a, input, select, textarea, th, td, label {
+    @apply transition-all duration-300 ease-out font-bold;
   }
 
   /* Global Hover Utilities */

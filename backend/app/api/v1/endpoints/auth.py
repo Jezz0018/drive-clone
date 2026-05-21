@@ -169,3 +169,18 @@ async def change_password(
     db.add(current_user)
     await db.commit()
     return {"message": "Password updated successfully"}
+
+@router.patch("/me", response_model=user_schema.User)
+async def update_profile(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    user_in: user_schema.UserUpdate,
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    if user_in.full_name is not None:
+        current_user.full_name = user_in.full_name
+    
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user

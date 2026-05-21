@@ -505,7 +505,7 @@
 <svelte:window onclick={closeAllMenus} />
 
 <div 
-    class="flex-1 flex flex-col bg-slate-100 dark:bg-[#0f172a] overflow-hidden relative transition-colors duration-300"
+    class="flex-1 flex flex-col bg-slate-100 dark:bg-[#0f172a] monochrome:bg-black overflow-hidden relative transition-colors duration-300"
     ondragover={(e) => { e.preventDefault(); isDragging = true; }}
     ondragleave={() => isDragging = false}
     ondrop={handleDrop}
@@ -522,10 +522,10 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between px-8 py-8 gap-4">
         <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar">
             {#each breadcrumbs as crumb, i}
-                <button onclick={() => navigateToBreadcrumb(crumb, i)} class={cn("flex items-center px-3 py-1.5 rounded-xl font-bold text-sm", i === breadcrumbs.length - 1 ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800")}>
+                <button onclick={() => navigateToBreadcrumb(crumb, i)} class={cn("flex items-center px-3 py-1.5 rounded-xl font-bold text-sm transition-all", i === breadcrumbs.length - 1 ? "bg-indigo-50 dark:bg-indigo-900/20 monochrome:bg-white/10 text-indigo-600 dark:text-indigo-400 monochrome:text-white" : "text-slate-500 dark:text-slate-400 monochrome:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-800 monochrome:hover:bg-white/10")}>
                     {crumb.name === 'Root' ? 'Main Menu' : crumb.name}
                 </button>
-                {#if i < breadcrumbs.length - 1}<ChevronRight class="w-4 h-4 text-slate-300 dark:text-slate-700" />{/if}
+                {#if i < breadcrumbs.length - 1}<ChevronRight class="w-4 h-4 text-slate-300 dark:text-slate-700 monochrome:text-white/20" />{/if}
             {/each}
         </div>
 
@@ -536,53 +536,53 @@
                     <span>Sort</span>
                 </button>
                 {#if showSortMenu}
-                    <div class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl p-2 z-50" transition:scale={{ duration: 150, start: 0.95 }} onclick={(e) => e.stopPropagation()}>
+                    <div class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 monochrome:bg-black border border-slate-100 dark:border-slate-800 monochrome:border-white/20 rounded-2xl shadow-2xl p-2 z-50" transition:scale={{ duration: 150, start: 0.95 }} onclick={(e) => e.stopPropagation()}>
                         <!-- Name Sorting -->
-                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Name</div>
+                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 monochrome:border-white/10 mb-1 font-bold text-[10px] text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest">Name</div>
                         <button 
                             onclick={() => { sortKey = 'name'; sortOrder = 'asc'; fetchItems(); showSortMenu = false; }} 
-                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold", sortKey === 'name' && sortOrder === 'asc' ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20" : "text-slate-600 dark:text-slate-300")}
+                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-xs font-bold", sortKey === 'name' && sortOrder === 'asc' ? "text-indigo-600 dark:text-indigo-400 monochrome:text-white bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/20" : "text-slate-600 dark:text-slate-300 monochrome:text-white/60")}
                         >
                             <span>A to Z</span>
                             {#if sortKey === 'name' && sortOrder === 'asc'}<ArrowUp class="w-3 h-3" />{/if}
                         </button>
                         <button 
                             onclick={() => { sortKey = 'name'; sortOrder = 'desc'; fetchItems(); showSortMenu = false; }} 
-                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold", sortKey === 'name' && sortOrder === 'desc' ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20" : "text-slate-600 dark:text-slate-300")}
+                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-xs font-bold", sortKey === 'name' && sortOrder === 'desc' ? "text-indigo-600 dark:text-indigo-400 monochrome:text-white bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/20" : "text-slate-600 dark:text-slate-300 monochrome:text-white/60")}
                         >
                             <span>Z to A</span>
                             {#if sortKey === 'name' && sortOrder === 'desc'}<ArrowDown class="w-3 h-3" />{/if}
                         </button>
 
                         <!-- Date Sorting -->
-                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mt-2 mb-1 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Date Modified</div>
+                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 monochrome:border-white/10 mt-2 mb-1 font-bold text-[10px] text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest">Date Modified</div>
                         <button 
                             onclick={() => { sortKey = 'date'; sortOrder = 'desc'; fetchItems(); showSortMenu = false; }} 
-                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold", sortKey === 'date' && sortOrder === 'desc' ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20" : "text-slate-600 dark:text-slate-300")}
+                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-xs font-bold", sortKey === 'date' && sortOrder === 'desc' ? "text-indigo-600 dark:text-indigo-400 monochrome:text-white bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/20" : "text-slate-600 dark:text-slate-300 monochrome:text-white/60")}
                         >
                             <span>Newest First</span>
                             {#if sortKey === 'date' && sortOrder === 'desc'}<ArrowDown class="w-3 h-3" />{/if}
                         </button>
                         <button 
                             onclick={() => { sortKey = 'date'; sortOrder = 'asc'; fetchItems(); showSortMenu = false; }} 
-                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold", sortKey === 'date' && sortOrder === 'asc' ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20" : "text-slate-600 dark:text-slate-300")}
+                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-xs font-bold", sortKey === 'date' && sortOrder === 'asc' ? "text-indigo-600 dark:text-indigo-400 monochrome:text-white bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/20" : "text-slate-600 dark:text-slate-300 monochrome:text-white/60")}
                         >
                             <span>Oldest First</span>
                             {#if sortKey === 'date' && sortOrder === 'asc'}<ArrowUp class="w-3 h-3" />{/if}
                         </button>
 
                         <!-- Size Sorting -->
-                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mt-2 mb-1 font-bold text-[10px] text-slate-400 uppercase tracking-widest">File Size</div>
+                        <div class="px-3 py-2 border-b border-slate-50 dark:border-slate-800 monochrome:border-white/10 mt-2 mb-1 font-bold text-[10px] text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest">File Size</div>
                         <button 
                             onclick={() => { sortKey = 'size'; sortOrder = 'desc'; fetchItems(); showSortMenu = false; }} 
-                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold", sortKey === 'size' && sortOrder === 'desc' ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20" : "text-slate-600 dark:text-slate-300")}
+                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-xs font-bold", sortKey === 'size' && sortOrder === 'desc' ? "text-indigo-600 dark:text-indigo-400 monochrome:text-white bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/20" : "text-slate-600 dark:text-slate-300 monochrome:text-white/60")}
                         >
                             <span>Largest First</span>
                             {#if sortKey === 'size' && sortOrder === 'desc'}<ArrowDown class="w-3 h-3" />{/if}
                         </button>
                         <button 
                             onclick={() => { sortKey = 'size'; sortOrder = 'asc'; fetchItems(); showSortMenu = false; }} 
-                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold", sortKey === 'size' && sortOrder === 'asc' ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20" : "text-slate-600 dark:text-slate-300")}
+                            class={cn("w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 text-xs font-bold", sortKey === 'size' && sortOrder === 'asc' ? "text-indigo-600 dark:text-indigo-400 monochrome:text-white bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/20" : "text-slate-600 dark:text-slate-300 monochrome:text-white/60")}
                         >
                             <span>Smallest First</span>
                             {#if sortKey === 'size' && sortOrder === 'asc'}<ArrowUp class="w-3 h-3" />{/if}
@@ -620,32 +620,32 @@
                     <div class="bg-indigo-600/5 w-32 h-32 rounded-[40px] flex items-center justify-center animate-bounce duration-[3000ms]"><UploadCloud class="w-16 h-16 text-indigo-200 dark:text-indigo-900/40" /></div>
                 </div>
                 <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-3">Your Cloud is Ready</h3>
-                <p class="text-slate-500 dark:text-slate-400 font-medium">Use the "Create New" button to get started.</p>
+                <p class="text-slate-500 dark:text-slate-400 font-bold">Use the "Create New" button to get started.</p>
             </div>
         {:else if viewMode === 'list'}
-            <div class="bg-slate-50/80 dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" in:fly={{ y: 20, duration: 400 }}>
+            <div class="bg-slate-50/80 dark:bg-slate-900 monochrome:bg-black rounded-[32px] border border-slate-200 dark:border-slate-800 monochrome:border-white/20 shadow-sm overflow-hidden" in:fly={{ y: 20, duration: 400 }}>
                 <table class="w-full text-left">
                     <thead>
-                        <tr class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                        <tr class="text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-[0.2em] border-b border-slate-50 dark:border-slate-800 monochrome:border-white/10 bg-slate-50/50 dark:bg-slate-800/30 monochrome:bg-white/5">
                             <th class="py-5 px-8">File Name</th>
                             <th class="py-5 px-8">Date</th>
                             <th class="py-5 px-8">Size</th>
                             <th class="py-5 px-8 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
+                    <tbody class="divide-y divide-slate-50 dark:divide-slate-800 monochrome:divide-white/10">
                         {#each items as item, i (item.id)}
                             {@const Icon = getFileIcon(item)}
                         <tr 
-                            class={cn("group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all duration-300 cursor-pointer hover:translate-x-1", selectedItemIds.has(item.id) && "bg-indigo-50/50 dark:bg-indigo-900/20")} 
+                            class={cn("group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 monochrome:hover:bg-white/5 transition-all duration-300 cursor-pointer hover:translate-x-1", selectedItemIds.has(item.id) && "bg-indigo-50/50 dark:bg-indigo-900/20 monochrome:bg-white/10")} 
                             onclick={(e) => item.is_folder ? openFolder(item) : toggleSelection(e, item.id)} 
                             ondblclick={() => item.is_folder ? openFolder(item) : (previewItem = item)}
                             in:fly={{ y: 10, duration: 300, delay: i * 30 }}
                         >
                                 <td class="py-5 px-8">
                                     <div class="flex items-center space-x-5">
-                                        <div class={cn("p-3 rounded-2xl relative transition-transform duration-300 group-hover:scale-110", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400")}><svelte:component this={Icon} class={cn("w-5 h-5 icon-bounce", item.is_folder && "fill-current")} /></div>
-                                        <div class="min-w-0"><span class="font-black text-sm truncate dark:text-white group-hover:text-indigo-600 transition-colors">{item.name}</span></div>
+                                        <div class={cn("p-3 rounded-2xl relative transition-transform duration-300 group-hover:scale-110", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 monochrome:bg-white/10 text-amber-700 dark:text-amber-400 monochrome:text-white" : "bg-indigo-100 dark:bg-indigo-900/30 monochrome:bg-white/10 text-indigo-700 dark:text-indigo-400 monochrome:text-white")}><svelte:component this={Icon} class={cn("w-5 h-5 icon-bounce", item.is_folder && "fill-current")} /></div>
+                                        <div class="min-w-0"><span class="font-black text-sm truncate dark:text-white monochrome:text-white group-hover:text-indigo-600 monochrome:group-hover:text-white transition-colors">{item.name}</span></div>
                                     </div>
                                 </td>
                                 <td class="py-5 px-8 text-xs font-bold text-slate-500 dark:text-slate-400">{new Date(item.updated_at).toLocaleDateString()}</td>
@@ -664,26 +664,26 @@
                     {@const Icon = getFileIcon(item)}
                     <div 
                         class={cn(
-                            "group bg-slate-50/50 dark:bg-slate-800/40 p-6 rounded-[40px] border-2 border-transparent transition-all relative cursor-pointer flex flex-col items-center text-center hover-lift hover-glow", 
-                            selectedItemIds.has(item.id) ? "border-indigo-500 bg-white dark:bg-slate-800 shadow-2xl shadow-indigo-500/10 scale-[1.02]" : "hover:bg-white dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 shadow-sm"
+                            "group bg-slate-50/50 dark:bg-slate-800/40 monochrome:bg-white/5 p-6 rounded-[40px] border-2 border-transparent transition-all relative cursor-pointer flex flex-col items-center text-center hover-lift hover-glow", 
+                            selectedItemIds.has(item.id) ? "border-indigo-500 bg-white dark:bg-slate-800 monochrome:bg-white/20 shadow-2xl shadow-indigo-500/10 scale-[1.02] monochrome:shadow-none" : "hover:bg-white dark:hover:bg-slate-800 monochrome:hover:bg-white/10 border-slate-200 dark:border-slate-800 monochrome:border-white/10 shadow-sm"
                         )} 
                         onclick={(e) => item.is_folder ? openFolder(item) : toggleSelection(e, item.id)} 
                         ondblclick={() => item.is_folder ? openFolder(item) : (previewItem = item)}
                         in:fly={{ y: 20, duration: 400, delay: i * 50 }}
                     >
                         <div class="absolute top-4 right-4 z-20 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {#if !item.is_folder}<button onclick={(e) => { e.stopPropagation(); downloadFile(item); }} class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700 transition-all"><Download class="w-4 h-4" /></button>{/if}
-                            <button onclick={(e) => { e.stopPropagation(); openThreeDotsMenu(e, item); }} class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur text-slate-400 hover:text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700 transition-all"><MoreVertical class="w-4 h-4" /></button>
+                            {#if !item.is_folder}<button onclick={(e) => { e.stopPropagation(); downloadFile(item); }} class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 monochrome:bg-black/80 backdrop-blur text-slate-400 hover:text-indigo-600 monochrome:hover:text-white shadow-sm border border-slate-100 dark:border-slate-700 monochrome:border-white/20 transition-all"><Download class="w-4 h-4" /></button>{/if}
+                            <button onclick={(e) => { e.stopPropagation(); openThreeDotsMenu(e, item); }} class="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 monochrome:bg-black/80 backdrop-blur text-slate-400 hover:text-indigo-600 monochrome:hover:text-white shadow-sm border border-slate-100 dark:border-slate-700 monochrome:border-white/20 transition-all"><MoreVertical class="w-4 h-4" /></button>
                         </div>
-                        <div class={cn("w-20 h-20 flex items-center justify-center rounded-[32px] mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400")}>
+                        <div class={cn("w-20 h-20 flex items-center justify-center rounded-[32px] mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3", item.is_folder ? "bg-amber-100 dark:bg-amber-900/30 monochrome:bg-white/10 text-amber-700 dark:text-amber-400 monochrome:text-white" : "bg-indigo-100 dark:bg-indigo-900/30 monochrome:bg-white/10 text-indigo-700 dark:text-indigo-400 monochrome:text-white")}>
                             <svelte:component this={Icon} class={cn("w-10 h-10 transition-transform duration-500 icon-bounce", item.is_folder && "fill-current")} />
                             {#if item.is_starred}
-                                <div class="absolute top-2 left-2 bg-white dark:bg-slate-900 rounded-xl p-1.5 shadow-lg border border-slate-100 dark:border-slate-800 animate-in zoom-in-50 duration-300">
-                                    <Star class="w-4 h-4 text-amber-500 fill-current" />
+                                <div class="absolute top-2 left-2 bg-white dark:bg-slate-900 monochrome:bg-black rounded-xl p-1.5 shadow-lg border border-slate-100 dark:border-slate-800 monochrome:border-white/20 animate-in zoom-in-50 duration-300">
+                                    <Star class="w-4 h-4 text-amber-500 fill-current monochrome:text-white" />
                                 </div>
                             {/if}
                         </div>
-                        <div class="w-full"><h4 class="font-black text-sm truncate px-1 dark:text-white tracking-tight mb-1 group-hover:text-indigo-600 transition-colors">{item.name}</h4><p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.is_folder ? 'Container' : formatSize(item.size)}</p></div>
+                        <div class="w-full"><h4 class="font-black text-sm truncate px-1 dark:text-white monochrome:text-white tracking-tight mb-1 group-hover:text-indigo-600 monochrome:group-hover:text-white transition-colors">{item.name}</h4><p class="text-[10px] font-black text-slate-400 dark:text-slate-500 monochrome:text-white/40 uppercase tracking-widest">{item.is_folder ? 'Container' : formatSize(item.size)}</p></div>
                     </div>
                 {/each}
             </div>
@@ -711,10 +711,10 @@
 {/if}
 
 {#if contextMenu}<ContextMenu x={contextMenu.x} y={contextMenu.y} item={contextMenu.item} categories={customCategories} onclose={() => contextMenu = null} onaction={handleAction} />{/if}
-{#if showMoveModal}<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[70] p-6" transition:fade><div class="bg-white dark:bg-slate-900 rounded-[48px] p-10 w-full max-w-md shadow-2xl relative overflow-hidden border border-white/10"><div class="flex items-center justify-between mb-8"><div class="flex items-center space-x-4"><div class="bg-indigo-100 dark:bg-indigo-900/30 p-2.5 rounded-2xl"><Folder class="w-6 h-6 text-indigo-600 dark:text-indigo-400" /></div><h2 class="text-xl font-black tracking-tight dark:text-white uppercase tracking-widest">Move Item</h2></div><button onclick={() => showMoveModal = false} class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-colors"><X class="w-5 h-5" /></button></div><div class="space-y-6"><div class="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar"><button onclick={() => selectedDestinationId = null} class={cn("w-full flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm", selectedDestinationId === null ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-600 dark:text-indigo-400" : "bg-slate-50 dark:bg-slate-800/30 border-transparent text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800")}>Main Drive</button>{#each allFolders as folder}<button onclick={() => selectedDestinationId = folder.id} class={cn("w-full flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm", selectedDestinationId === folder.id ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-600 dark:text-indigo-400" : "bg-slate-50 dark:bg-slate-800/30 border-transparent text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800")}>{folder.name}</button>{/each}</div><button onclick={confirmMove} class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-[24px] py-4 transition-all shadow-xl shadow-indigo-500/20 uppercase tracking-widest text-sm">Confirm Relocation</button></div></div></div>{/if}
+{#if showMoveModal}<div class="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-md flex items-center justify-center z-[70] p-6" transition:fade><div class="bg-white dark:bg-slate-900 monochrome:bg-black rounded-[48px] p-10 w-full max-w-md shadow-2xl relative overflow-hidden border border-white/10 monochrome:border-white/20"><div class="flex items-center justify-between mb-8"><div class="flex items-center space-x-4"><div class="bg-indigo-100 dark:bg-indigo-900/30 monochrome:bg-white/10 p-2.5 rounded-2xl"><Folder class="w-6 h-6 text-indigo-600 dark:text-indigo-400 monochrome:text-white" /></div><h2 class="text-xl font-black tracking-tight dark:text-white monochrome:text-white uppercase tracking-widest">Move Item</h2></div><button onclick={() => showMoveModal = false} class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 rounded-xl text-slate-400 monochrome:text-white/40 transition-colors"><X class="w-5 h-5" /></button></div><div class="space-y-6"><div class="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar"><button onclick={() => selectedDestinationId = null} class={cn("w-full flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm", selectedDestinationId === null ? "bg-indigo-50 dark:bg-indigo-900/20 monochrome:bg-white/20 border-indigo-500 monochrome:border-white text-indigo-600 dark:text-indigo-400 monochrome:text-white" : "bg-slate-50 dark:bg-slate-800/30 monochrome:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 monochrome:text-white/60 hover:bg-white dark:hover:bg-slate-800 monochrome:hover:bg-white/10")}>Main Drive</button>{#each allFolders as folder}<button onclick={() => selectedDestinationId = folder.id} class={cn("w-full flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm", selectedDestinationId === folder.id ? "bg-indigo-50 dark:bg-indigo-900/20 monochrome:bg-white/20 border-indigo-500 monochrome:border-white text-indigo-600 dark:text-indigo-400 monochrome:text-white" : "bg-slate-50 dark:bg-slate-800/30 monochrome:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 monochrome:text-white/60 hover:bg-white dark:hover:bg-slate-800 monochrome:hover:bg-white/10")}>{folder.name}</button>{/each}</div><button onclick={confirmMove} class="w-full bg-indigo-600 hover:bg-indigo-700 monochrome:bg-white text-white monochrome:text-black font-black rounded-[24px] py-4 transition-all shadow-xl shadow-indigo-500/20 monochrome:shadow-none uppercase tracking-widest text-sm">Confirm Relocation</button></div></div></div>{/if}
 {#if sharingItem}<ShareModal item={sharingItem} onclose={() => sharingItem = null} />{/if}
 {#if previewItem}<FilePreview item={previewItem} onclose={() => previewItem = null} ondownload={() => downloadFile(previewItem!)} />{/if}
-{#if selectedItemIds.size > 0}<div class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[80] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-2xl p-3 flex items-center space-x-6 min-w-[400px]" transition:fly={{ y: 100, duration: 500, easing: quintOut }}><div class="flex items-center space-x-4 pl-6 pr-4 border-r border-slate-100 dark:border-slate-800"><div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-500/20">{selectedItemIds.size}</div><span class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Selected</span></div><div class="flex items-center space-x-2"><button onclick={() => handleBatchAction('star')} class="p-3 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-2xl text-slate-400 hover:text-amber-500 transition-all flex flex-col items-center"><Star class="w-5 h-5 mb-1" /><span class="text-[8px] font-black uppercase tracking-tighter">Favorite</span></button><button onclick={() => handleBatchAction('download')} class="p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all flex flex-col items-center"><Download class="w-5 h-5 mb-1" /><span class="text-[8px] font-black uppercase tracking-tighter">Download</span></button><button onclick={() => handleBatchAction('trash')} class="p-3 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl text-slate-400 hover:text-rose-600 transition-all flex flex-col items-center"><Trash class="w-5 h-5 mb-1" /><span class="text-[8px] font-black uppercase tracking-tighter">Delete</span></button></div><div class="pl-4 pr-3"><button onclick={() => selectedItemIds = new Set()} class="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"><X class="w-6 h-6" /></button></div></div>{/if}
+{#if selectedItemIds.size > 0}<div class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[80] bg-white dark:bg-slate-900 monochrome:bg-black border border-slate-200 dark:border-slate-800 monochrome:border-white/20 rounded-[32px] shadow-2xl p-3 flex items-center space-x-6 min-w-[400px]" transition:fly={{ y: 100, duration: 500, easing: quintOut }}><div class="flex items-center space-x-4 pl-6 pr-4 border-r border-slate-100 dark:border-slate-800 monochrome:border-white/10"><div class="bg-indigo-600 monochrome:bg-white text-white monochrome:text-black w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-500/20 monochrome:shadow-none">{selectedItemIds.size}</div><span class="text-xs font-black text-slate-900 dark:text-white monochrome:text-white uppercase tracking-widest">Selected</span></div><div class="flex items-center space-x-2"><button onclick={() => handleBatchAction('star')} class="p-3 hover:bg-amber-50 dark:hover:bg-amber-900/20 monochrome:hover:bg-white/10 rounded-2xl text-slate-400 monochrome:text-white/60 hover:text-amber-500 monochrome:hover:text-white transition-all flex flex-col items-center"><Star class="w-5 h-5 mb-1" /><span class="text-[8px] font-black uppercase tracking-tighter">Favorite</span></button><button onclick={() => handleBatchAction('download')} class="p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 monochrome:hover:bg-white/10 rounded-2xl text-slate-400 monochrome:text-white/60 hover:text-indigo-600 monochrome:hover:text-white transition-all flex flex-col items-center"><Download class="w-5 h-5 mb-1" /><span class="text-[8px] font-black uppercase tracking-tighter">Download</span></button><button onclick={() => handleBatchAction('trash')} class="p-3 hover:bg-rose-50 dark:hover:bg-rose-900/20 monochrome:hover:bg-white/10 rounded-2xl text-slate-400 monochrome:text-white/60 hover:text-rose-600 monochrome:hover:text-white transition-all flex flex-col items-center"><Trash class="w-5 h-5 mb-1" /><span class="text-[8px] font-black uppercase tracking-tighter">Delete</span></button></div><div class="pl-4 pr-3"><button onclick={() => selectedItemIds = new Set()} class="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 monochrome:hover:bg-white/10 rounded-2xl text-slate-400 monochrome:text-white/60 hover:text-slate-900 dark:hover:text-white monochrome:hover:text-white transition-all"><X class="w-6 h-6" /></button></div></div>{/if}
 
 <style>
     @reference "../../routes/layout.css";
