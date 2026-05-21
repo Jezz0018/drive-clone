@@ -519,7 +519,11 @@
         </div>
     {/if}
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between px-8 py-8 gap-4">
+    <div class="px-8 pt-8">
+        <h1 class="text-4xl font-black text-slate-900 dark:text-white monochrome:text-white tracking-tighter mb-2">{title}</h1>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between px-8 py-4 gap-4">
         <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar">
             {#each breadcrumbs as crumb, i}
                 <button onclick={() => navigateToBreadcrumb(crumb, i)} class={cn("flex items-center px-3 py-1.5 rounded-xl font-bold text-sm transition-all", i === breadcrumbs.length - 1 ? "bg-indigo-50 dark:bg-indigo-900/20 monochrome:bg-white/10 text-indigo-600 dark:text-indigo-400 monochrome:text-white" : "text-slate-500 dark:text-slate-400 monochrome:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-800 monochrome:hover:bg-white/10")}>
