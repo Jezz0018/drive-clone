@@ -531,8 +531,8 @@
 
         <div class="flex items-center space-x-3">
             <div class="relative">
-                <button onclick={(e) => { e.stopPropagation(); showSortMenu = !showSortMenu; }} class={cn("flex items-center space-x-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-[14px] px-3 py-1.5 shadow-sm font-bold text-[11px] uppercase tracking-widest", showSortMenu && "border-indigo-500")}>
-                    <ArrowUpDown class="w-3 h-3" />
+                <button onclick={(e) => { e.stopPropagation(); showSortMenu = !showSortMenu; }} class={cn("flex items-center space-x-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-[14px] px-3 py-1.5 shadow-sm font-bold text-[11px] uppercase tracking-widest hover-lift transition-all duration-300 group", showSortMenu && "border-indigo-500 shadow-lg shadow-indigo-500/10")}>
+                    <ArrowUpDown class="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" />
                     <span>Sort</span>
                 </button>
                 {#if showSortMenu}
@@ -592,8 +592,12 @@
             </div>
 
             <div class="flex bg-white dark:bg-slate-800 p-1 rounded-[14px] border border-slate-200 dark:border-slate-700 shadow-sm">
-                <button onclick={() => viewMode = 'list'} class={cn("p-1.5 rounded-lg flex items-center space-x-1.5 px-2.5", viewMode === 'list' ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500")}><LayoutList class="w-3.5 h-3.5" /></button>
-                <button onclick={() => viewMode = 'grid'} class={cn("p-1.5 rounded-lg flex items-center space-x-1.5 px-2.5", viewMode === 'grid' ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500")}><LayoutGrid class="w-3.5 h-3.5" /></button>
+                <button onclick={() => viewMode = 'list'} class={cn("p-1.5 rounded-lg flex items-center space-x-1.5 px-2.5 hover-lift transition-all duration-300 group", viewMode === 'list' ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500")}>
+                    <LayoutList class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
+                <button onclick={() => viewMode = 'grid'} class={cn("p-1.5 rounded-lg flex items-center space-x-1.5 px-2.5 hover-lift transition-all duration-300 group", viewMode === 'grid' ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500")}>
+                    <LayoutGrid class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
             </div>
             
             {#if isTrashed}
